@@ -20,14 +20,18 @@ export class TestingController {
   @Delete("all-data")
   @HttpCode(HttpStatus.NO_CONTENT)
   async deleteAll() {
-    const skipTables = [SETTINGS.TABLES.LIKES_STATUSES];
+    const allTables = await this.dataSource.query(`
+        SELECT table_name 
+        FROM information_schema.tables 
+        WHERE table_schema='public' AND table_type='BASE TABLE'
+    `);
 
-    const promises = Object.keys(SETTINGS.TABLES)
-      .filter((key) => !skipTables.includes(SETTINGS.TABLES[key]))
-      .map((key) => {
+    const promises = allTables
+      .map((table: { table_name: string }) => table.table_name)
+      .map((name: string) => {
         const query = `
-       TRUNCATE TABLE ${SETTINGS.TABLES[key]} RESTART IDENTITY CASCADE;
-    `;
+         TRUNCATE TABLE "${name}" RESTART IDENTITY CASCADE;
+        `;
 
         return this.dataSource.query(query);
       });
@@ -38,7 +42,8 @@ export class TestingController {
       return {
         status: "succeeded",
       };
-    } catch {
+    } catch (e) {
+      console.log(e);
       throw new DomainException({
         code: DomainExceptionCode.InternalServerError,
         message: "Failed to truncate tables",
