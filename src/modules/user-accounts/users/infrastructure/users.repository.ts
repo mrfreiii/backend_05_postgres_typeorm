@@ -1,9 +1,10 @@
-import { DataSource } from "typeorm";
+import { DataSource, Repository } from "typeorm";
 import { Injectable } from "@nestjs/common";
 import { validate as isValidUUID } from "uuid";
-import { InjectDataSource } from "@nestjs/typeorm";
+import { InjectDataSource, InjectRepository } from "@nestjs/typeorm";
 
 import { SETTINGS } from "../../../../settings";
+import { User } from "../entity/user.entity.typeorm";
 import { UserEntity } from "../domain/user.entity.pg";
 import { RegistrationEntity } from "../domain/registration.entity.pg";
 import { PasswordRecoveryEntity } from "../domain/passwordRecovery.entity.pg";
@@ -12,27 +13,16 @@ import { DomainExceptionCode } from "../../../../core/exceptions/domain-exceptio
 
 @Injectable()
 export class UsersRepository {
-  constructor(@InjectDataSource() private dataSource: DataSource) {}
+  constructor(
+    @InjectDataSource() private dataSource: DataSource,
+    @InjectRepository(User) private userEntity: Repository<User>,
+  ) {}
 
-  async createUser_pg(user: any) {
-    const query = `
-        INSERT INTO ${SETTINGS.TABLES.USERS}
-            ("id","email","login","passwordHash","isEmailConfirmed","createdAt")
-            VALUES
-            ($1, $2, $3, $4, $5, $6)
-    `;
-
+  async createUser_typeorm(user: User) {
     try {
-      await this.dataSource.query(query, [
-        user.id,
-        user.email,
-        user.login,
-        user.passwordHash,
-        user.isEmailConfirmed,
-        user.createdAt,
-      ]);
+      const response = await this.userEntity.save(user);
 
-      return user.id;
+      return response?.id;
     } catch (e) {
       console.log(e);
       throw new DomainException({
@@ -48,14 +38,11 @@ export class UsersRepository {
     }
   }
 
-  async findByLogin_pg(login: string): Promise<boolean> {
-    const query = `
-       SELECT * FROM ${SETTINGS.TABLES.USERS} WHERE "login" = $1
-    `;
-
+  async findByLogin_typeorm(login: string): Promise<User | null> {
     try {
-      const result = await this.dataSource.query(query, [login]);
-      return result?.[0];
+      return this.userEntity.findOne({
+        where: { login },
+      });
     } catch {
       throw new DomainException({
         code: DomainExceptionCode.InternalServerError,
@@ -70,14 +57,11 @@ export class UsersRepository {
     }
   }
 
-  async findByEmail_pg(email: string): Promise<UserEntity> {
-    const query = `
-       SELECT * FROM ${SETTINGS.TABLES.USERS} WHERE "email" = $1
-    `;
-
+  async findByEmail_typeorm(email: string): Promise<User | null> {
     try {
-      const result = await this.dataSource.query(query, [email]);
-      return result?.[0];
+      return this.userEntity.findOne({
+        where: { email },
+      });
     } catch {
       throw new DomainException({
         code: DomainExceptionCode.InternalServerError,
@@ -92,7 +76,7 @@ export class UsersRepository {
     }
   }
 
-  async findOrNotFoundFail_pg(id: string): Promise<UserEntity> {
+  async findOrNotFoundFail_typeorm(id: string): Promise<User> {
     if (!isValidUUID(id)) {
       throw new DomainException({
         code: DomainExceptionCode.NotFound,
@@ -106,15 +90,12 @@ export class UsersRepository {
       });
     }
 
-    let user: UserEntity;
-
-    const query = `
-       SELECT * FROM ${SETTINGS.TABLES.USERS} WHERE "id" = $1
-    `;
+    let user: User | null;
 
     try {
-      const result = await this.dataSource.query(query, [id]);
-      user = result?.[0];
+      user = await this.userEntity.findOne({
+        where: { id },
+      });
     } catch (e) {
       console.log(e);
       throw new DomainException({
@@ -144,18 +125,9 @@ export class UsersRepository {
     return user;
   }
 
-  async makeUserDeleted_pg(dto: {
-    id: string;
-    deletedAt: string;
-  }): Promise<void> {
-    const query = `
-       UPDATE ${SETTINGS.TABLES.USERS}
-        SET "deletedAt" = '${dto.deletedAt}'
-        WHERE "id" = $1
-    `;
-
+  async makeUserDeleted_typeorm(id: string): Promise<void> {
     try {
-      await this.dataSource.query(query, [dto.id]);
+      await this.userEntity.softDelete({ id });
     } catch {
       throw new DomainException({
         code: DomainExceptionCode.InternalServerError,

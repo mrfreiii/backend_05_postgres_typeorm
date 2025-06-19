@@ -12,9 +12,8 @@ export class DeleteUserCommandHandler
   constructor(private usersRepository: UsersRepository) {}
 
   async execute({ id }: DeleteUserCommand): Promise<void> {
-    await this.usersRepository.findOrNotFoundFail_pg(id);
+    await this.usersRepository.findOrNotFoundFail_typeorm(id);
 
-    const deletedAt = new Date(Date.now()).toISOString();
-    await this.usersRepository.makeUserDeleted_pg({ id, deletedAt });
+    await this.usersRepository.makeUserDeleted_typeorm(id);
   }
 }

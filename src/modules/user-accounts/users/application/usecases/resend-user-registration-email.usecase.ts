@@ -30,7 +30,7 @@ export class ResendUserRegistrationEmailCommandHandler
   }: ResendUserRegistrationEmailCommand): Promise<void> {
     const { email, currentURL } = inputData;
 
-    const user = await this.usersRepository.findByEmail_pg(email);
+    const user = await this.usersRepository.findByEmail_typeorm(email);
     if (!user) {
       throw new DomainException({
         code: DomainExceptionCode.BadRequest,

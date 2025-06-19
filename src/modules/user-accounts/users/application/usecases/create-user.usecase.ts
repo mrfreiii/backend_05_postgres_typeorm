@@ -1,7 +1,9 @@
+import { Repository } from "typeorm";
+import { InjectRepository } from "@nestjs/typeorm";
 import { CommandHandler, ICommandHandler } from "@nestjs/cqrs";
 
 import { CryptoService } from "../crypto.service";
-import { UserEntity } from "../../domain/user.entity.pg";
+import { User } from "../../entity/user.entity.typeorm";
 import { CreateUserDto } from "../../dto/create-user.dto";
 import { UsersRepository } from "../../infrastructure/users.repository";
 import { DomainException } from "../../../../../core/exceptions/domain-exceptions";
@@ -16,14 +18,13 @@ export class CreateUserCommandHandler
   implements ICommandHandler<CreateUserCommand, string>
 {
   constructor(
-    // @InjectModel(User.name) private UserModel: UserModelType,
     private usersRepository: UsersRepository,
     private cryptoService: CryptoService,
-    private userEntity: UserEntity,
+    @InjectRepository(User) private userEntity: Repository<User>,
   ) {}
 
   async execute({ dto }: CreateUserCommand): Promise<string> {
-    const userWithTheSameLogin = await this.usersRepository.findByLogin_pg(
+    const userWithTheSameLogin = await this.usersRepository.findByLogin_typeorm(
       dto.login,
     );
     if (userWithTheSameLogin) {
@@ -39,7 +40,7 @@ export class CreateUserCommandHandler
       });
     }
 
-    const userWithTheSameEmail = await this.usersRepository.findByEmail_pg(
+    const userWithTheSameEmail = await this.usersRepository.findByEmail_typeorm(
       dto.email,
     );
     if (userWithTheSameEmail) {
@@ -59,12 +60,13 @@ export class CreateUserCommandHandler
       dto.password,
     );
 
-    const user = this.userEntity.createInstance({
+    const newUser = this.userEntity.create({
       email: dto.email,
       login: dto.login,
       passwordHash,
+      isEmailConfirmed: false,
     });
 
-    return this.usersRepository.createUser_pg(user);
+    return this.usersRepository.createUser_typeorm(newUser);
   }
 }

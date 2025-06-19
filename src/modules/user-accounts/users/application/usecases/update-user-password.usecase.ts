@@ -50,7 +50,7 @@ export class UpdateUserPasswordCommandHandler
       });
     }
 
-    const user = await this.usersRepository.findOrNotFoundFail_pg(
+    const user = await this.usersRepository.findOrNotFoundFail_typeorm(
       passwordRecoveryInfo.userId,
     );
 

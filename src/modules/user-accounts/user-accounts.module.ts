@@ -1,6 +1,7 @@
 import { UsersConfig } from "./users/config/users.config";
 
 import { Module } from "@nestjs/common";
+import { TypeOrmModule } from "@nestjs/typeorm";
 import { JwtModule, JwtService } from "@nestjs/jwt";
 
 import {
@@ -8,6 +9,8 @@ import {
   REFRESH_TOKEN_STRATEGY_INJECT_TOKEN,
 } from "./constants/auth-tokens.inject-constants";
 import { NotificationsModule } from "../notifications/notifications.module";
+
+import { User } from "./users/entity/user.entity.typeorm";
 
 import { UserEntity } from "./users/domain/user.entity.pg";
 import { SessionEntity } from "./sessions/domain/session.entity.pg";
@@ -106,8 +109,14 @@ const entities = [
   SessionEntity,
 ];
 
+const typeorm_entities = [User];
+
 @Module({
-  imports: [NotificationsModule, JwtModule],
+  imports: [
+    NotificationsModule,
+    JwtModule,
+    TypeOrmModule.forFeature([...typeorm_entities]),
+  ],
   controllers: [UsersController, AuthController, SessionsController],
   providers: [
     ...commandHandlers,

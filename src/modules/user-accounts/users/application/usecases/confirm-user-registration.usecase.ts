@@ -45,7 +45,7 @@ export class ConfirmUserRegistrationCommandHandler
       });
     }
 
-    const user = await this.usersRepository.findOrNotFoundFail_pg(
+    const user = await this.usersRepository.findOrNotFoundFail_typeorm(
       registrationInfo.userId,
     );
     if (user.isEmailConfirmed) {

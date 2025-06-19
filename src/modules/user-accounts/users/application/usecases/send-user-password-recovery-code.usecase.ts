@@ -28,7 +28,7 @@ export class SendUserPasswordRecoveryCodeCommandHandler
   }: SendUserPasswordRecoveryCodeCommand): Promise<void> {
     const { email, currentURL } = inputData;
 
-    const user = await this.usersRepository.findByEmail_pg(email);
+    const user = await this.usersRepository.findByEmail_typeorm(email);
     if (!user) {
       return;
     }

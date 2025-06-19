@@ -33,7 +33,7 @@ export class RegisterUserCommandHandler
     );
 
     const user =
-      await this.usersRepository.findOrNotFoundFail_pg(createdUserId);
+      await this.usersRepository.findOrNotFoundFail_typeorm(createdUserId);
 
     const registrationInfo =
       this.registrationEntity.createInstance(createdUserId);

@@ -1,4 +1,4 @@
-import { UserEntity } from "../../domain/user.entity.pg";
+import { User } from "../../entity/user.entity.typeorm";
 
 export class UserViewDtoPg {
   id: string;
@@ -6,7 +6,7 @@ export class UserViewDtoPg {
   email: string;
   createdAt: string;
 
-  static mapToView(user: UserEntity): UserViewDtoPg {
+  static mapToView(user: User): UserViewDtoPg {
     const dto = new UserViewDtoPg();
 
     dto.id = user.id;
@@ -23,7 +23,7 @@ export class MeViewDtoPg {
   login: string;
   userId: string;
 
-  static mapToView(user: UserEntity): MeViewDtoPg {
+  static mapToView(user: User): MeViewDtoPg {
     const dto = new MeViewDtoPg();
 
     dto.email = user.email;
