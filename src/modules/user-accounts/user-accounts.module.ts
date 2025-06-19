@@ -11,6 +11,7 @@ import {
 import { NotificationsModule } from "../notifications/notifications.module";
 
 import { User } from "./users/entity/user.entity.typeorm";
+import { UserRegistration } from "./users/entity/registation.entity.typeorm";
 
 import { UserEntity } from "./users/domain/user.entity.pg";
 import { SessionEntity } from "./sessions/domain/session.entity.pg";
@@ -48,6 +49,8 @@ import { ConfirmUserRegistrationCommandHandler } from "./users/application/useca
 import { DeleteAllOtherSessionCommandHandler } from "./sessions/application/usecases/delete-all-other-sessions.usecase";
 import { ResendUserRegistrationEmailCommandHandler } from "./users/application/usecases/resend-user-registration-email.usecase";
 import { SendUserPasswordRecoveryCodeCommandHandler } from "./users/application/usecases/send-user-password-recovery-code.usecase";
+import { UserPasswordRecovery } from "./users/entity/passwordRecovery.entity.typeorm";
+import { Session } from "./sessions/entity/session.entity.typeorm";
 
 const commandHandlers = [
   ValidateUserCommandHandler,
@@ -109,7 +112,12 @@ const entities = [
   SessionEntity,
 ];
 
-const typeorm_entities = [User];
+const typeorm_entities = [
+  User,
+  UserRegistration,
+  UserPasswordRecovery,
+  Session,
+];
 
 @Module({
   imports: [
@@ -125,6 +133,10 @@ const typeorm_entities = [User];
     ...strategies,
     ...entities,
   ],
-  exports: [UsersExternalQueryRepository, UsersExternalService],
+  exports: [
+    UsersExternalQueryRepository,
+    UsersExternalService,
+    TypeOrmModule.forFeature([...typeorm_entities]),
+  ],
 })
 export class UserAccountsModule {}

@@ -1,8 +1,12 @@
 import { v4 as uuidv4 } from "uuid";
+import { Repository } from "typeorm";
+import { InjectRepository } from "@nestjs/typeorm";
 import { CommandHandler, ICommandHandler } from "@nestjs/cqrs";
 
+import { parseRefreshToken } from "../../helpers";
+import { getDeviceTitle } from "../../../sessions/helpers";
 import { TokenGenerationService } from "../tokenGeneration.service";
-import { SessionEntity } from "../../../sessions/domain/session.entity.pg";
+import { Session } from "../../../sessions/entity/session.entity.typeorm";
 import { LoginUserInputDto, LoginUserOutputDto } from "../dto/login-user.dto";
 import { SessionsRepository } from "../../../sessions/infrastructure/sessions.repository";
 
@@ -17,7 +21,7 @@ export class LoginUserCommandHandler
   constructor(
     private sessionsRepository: SessionsRepository,
     private tokenGenerationService: TokenGenerationService,
-    private sessionEntity: SessionEntity,
+    @InjectRepository(Session) private sessionEntity: Repository<Session>,
   ) {}
 
   async execute({ dto }: LoginUserCommand): Promise<LoginUserOutputDto> {
@@ -30,14 +34,21 @@ export class LoginUserCommandHandler
       deviceId,
     });
 
-    const session = this.sessionEntity.createInstance({
+    const deviceTitle = getDeviceTitle(userAgent);
+    const { issuedAt, expirationTime, version } =
+      parseRefreshToken(refreshToken);
+
+    const session = this.sessionEntity.create({
       userId,
       deviceId,
-      userAgent,
-      ip,
-      refreshToken,
+      ip: ip || "unknown ip",
+      title: deviceTitle,
+      version,
+      issuedAt,
+      expirationTime,
     });
-    await this.sessionsRepository.createSession_pg(session);
+
+    await this.sessionsRepository.save_session_typeorm(session);
 
     return Promise.resolve({
       accessToken,

@@ -19,7 +19,7 @@ export class DeleteSessionByIdCommandHandler
     const { deviceIdFromQueryParam, payload } = dto;
 
     const currentUserSession =
-      await this.sessionsRepository.findBy_userId_deviceId_version_pg({
+      await this.sessionsRepository.findBy_userId_deviceId_version_typeorm({
         userId: payload.userId,
         deviceId: payload.deviceId,
         version: payload.version,
@@ -67,6 +67,6 @@ export class DeleteSessionByIdCommandHandler
       });
     }
 
-    await this.sessionsRepository.deleteSession_pg(sessionForDeletion.deviceId);
+    // await this.sessionsRepository.deleteSession_typeorm(sessionForDeletion.deviceId);
   }
 }

@@ -1,8 +1,11 @@
+import { add } from "date-fns";
+import { Repository } from "typeorm";
+import { InjectRepository } from "@nestjs/typeorm";
 import { CommandHandler, ICommandHandler } from "@nestjs/cqrs";
 
 import { UsersRepository } from "../../infrastructure/users.repository";
-import { PasswordRecoveryEntity } from "../../domain/passwordRecovery.entity.pg";
 import { EmailService } from "../../../../notifications/application/email.service";
+import { UserPasswordRecovery } from "../../entity/passwordRecovery.entity.typeorm";
 
 export class SendUserPasswordRecoveryCodeCommand {
   constructor(
@@ -20,7 +23,8 @@ export class SendUserPasswordRecoveryCodeCommandHandler
   constructor(
     private usersRepository: UsersRepository,
     private emailService: EmailService,
-    private passwordRecoveryEntity: PasswordRecoveryEntity,
+    @InjectRepository(UserPasswordRecovery)
+    private userPasswordRecoveryEntity: Repository<UserPasswordRecovery>,
   ) {}
 
   async execute({
@@ -33,8 +37,16 @@ export class SendUserPasswordRecoveryCodeCommandHandler
       return;
     }
 
-    const recoveryInfo = this.passwordRecoveryEntity.createInstance(user.id);
-    await this.usersRepository.setPasswordRecoveryCode_pg(recoveryInfo);
+    const recoveryInfo = this.userPasswordRecoveryEntity.create({
+      codeExpirationDate: add(new Date(), {
+        minutes: 2,
+      }).getTime(),
+      userId: user.id,
+    });
+
+    await this.usersRepository.save_userPasswordRecoveryInfo_typeorm(
+      recoveryInfo,
+    );
 
     this.emailService
       .sendEmailWithPasswordRecoveryCode({

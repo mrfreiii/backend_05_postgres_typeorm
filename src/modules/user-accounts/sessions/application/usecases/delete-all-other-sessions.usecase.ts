@@ -17,7 +17,7 @@ export class DeleteAllOtherSessionCommandHandler
 
   async execute({ payload }: DeleteAllOtherSessionCommand): Promise<void> {
     const currentUserSession =
-      await this.sessionsRepository.findBy_userId_deviceId_version_pg({
+      await this.sessionsRepository.findBy_userId_deviceId_version_typeorm({
         userId: payload.userId,
         deviceId: payload.deviceId,
         version: payload.version,

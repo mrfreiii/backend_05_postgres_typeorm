@@ -21,7 +21,7 @@ export class UpdateUserPasswordCommandHandler
 
   async execute({ dto }: UpdateUserPasswordCommand): Promise<void> {
     const passwordRecoveryInfo =
-      await this.usersRepository.findPasswordRecoveryInfoByRecoveryCode_pg(
+      await this.usersRepository.findPasswordRecoveryInfoByRecoveryCode_typeorm(
         dto.recoveryCode,
       );
     if (!passwordRecoveryInfo) {
@@ -54,13 +54,10 @@ export class UpdateUserPasswordCommandHandler
       passwordRecoveryInfo.userId,
     );
 
-    const passwordHash = await this.cryptoService.createPasswordHash(
+    user.passwordHash = await this.cryptoService.createPasswordHash(
       dto.newPassword,
     );
 
-    await this.usersRepository.updateUserPassword_pg({
-      userId: user.id,
-      newPassword: passwordHash,
-    });
+    await this.usersRepository.save_user_typeorm(user);
   }
 }

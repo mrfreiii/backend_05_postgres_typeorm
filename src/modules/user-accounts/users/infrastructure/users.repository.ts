@@ -10,15 +10,21 @@ import { RegistrationEntity } from "../domain/registration.entity.pg";
 import { PasswordRecoveryEntity } from "../domain/passwordRecovery.entity.pg";
 import { DomainException } from "../../../../core/exceptions/domain-exceptions";
 import { DomainExceptionCode } from "../../../../core/exceptions/domain-exception-codes";
+import { UserRegistration } from "../entity/registation.entity.typeorm";
+import { UserPasswordRecovery } from "../entity/passwordRecovery.entity.typeorm";
 
 @Injectable()
 export class UsersRepository {
   constructor(
     @InjectDataSource() private dataSource: DataSource,
     @InjectRepository(User) private userEntity: Repository<User>,
+    @InjectRepository(UserRegistration)
+    private userRegistrationEntity: Repository<UserRegistration>,
+    @InjectRepository(UserPasswordRecovery)
+    private userPasswordRecoveryEntity: Repository<UserPasswordRecovery>,
   ) {}
 
-  async createUser_typeorm(user: User) {
+  async save_user_typeorm(user: User) {
     try {
       const response = await this.userEntity.save(user);
 
@@ -27,11 +33,11 @@ export class UsersRepository {
       console.log(e);
       throw new DomainException({
         code: DomainExceptionCode.InternalServerError,
-        message: "Failed to create user in db",
+        message: "Failed to save user in db",
         extensions: [
           {
             field: "",
-            message: "Failed to create user in db",
+            message: "Failed to save user in db",
           },
         ],
       });
@@ -142,24 +148,11 @@ export class UsersRepository {
     }
   }
 
-  async setRegistrationConfirmationCode_pg(dto: {
-    userId: string;
-    confirmationCode: string;
-    codeExpirationDate: number;
-  }): Promise<void> {
-    const query = `
-        INSERT INTO ${SETTINGS.TABLES.USERS_REGISTRATION_INFO}
-            ("confirmationCode","codeExpirationDate","userId")
-            VALUES
-            ($1, $2, $3)
-    `;
-
+  async save_userRegistrationInfo_typeorm(
+    registrationInfo: UserRegistration,
+  ): Promise<void> {
     try {
-      await this.dataSource.query(query, [
-        dto.confirmationCode,
-        dto.codeExpirationDate,
-        dto.userId,
-      ]);
+      await this.userRegistrationEntity.save(registrationInfo);
     } catch (e) {
       console.log(e);
       throw new DomainException({
@@ -175,53 +168,17 @@ export class UsersRepository {
     }
   }
 
-  async updateRegistrationConfirmationCode_pg(dto: {
-    userId: string;
-    confirmationCode: string;
-    codeExpirationDate: number;
-  }): Promise<void> {
-    const query = `
-       UPDATE ${SETTINGS.TABLES.USERS_REGISTRATION_INFO} 
-       SET "confirmationCode" = $1,
-           "codeExpirationDate" = $2
-       WHERE "userId" = $3
-    `;
-
-    try {
-      await this.dataSource.query(query, [
-        dto.confirmationCode,
-        dto.codeExpirationDate,
-        dto.userId,
-      ]);
-    } catch (e) {
-      console.log(e);
-      throw new DomainException({
-        code: DomainExceptionCode.InternalServerError,
-        message: "Failed to update registration confirmation code",
-        extensions: [
-          {
-            field: "",
-            message: "Failed to update registration confirmation code",
-          },
-        ],
-      });
-    }
-  }
-
-  async findRegistrationInfoByConfirmationCode_pg(
+  async findRegistrationInfoByConfirmationCode_typeorm(
     confirmationCode: string,
-  ): Promise<RegistrationEntity | null> {
+  ): Promise<UserRegistration | null> {
     if (!isValidUUID(confirmationCode)) {
       return null;
     }
 
-    const query = `
-       SELECT * FROM ${SETTINGS.TABLES.USERS_REGISTRATION_INFO} WHERE "confirmationCode" = $1
-    `;
-
     try {
-      const response = await this.dataSource.query(query, [confirmationCode]);
-      return response[0];
+      return this.userRegistrationEntity.findOne({
+        where: { confirmationCode },
+      });
     } catch (e) {
       console.log(e);
       throw new DomainException({
@@ -237,42 +194,37 @@ export class UsersRepository {
     }
   }
 
-  async confirmUserRegistration_pg(userId: string): Promise<void> {
-    const query = `
-       UPDATE ${SETTINGS.TABLES.USERS} SET "isEmailConfirmed" = true WHERE "id" = $1
-    `;
+  async findRegistrationInfoByUserId_typeorm(
+    userId: string,
+  ): Promise<UserRegistration | null> {
+    if (!isValidUUID(userId)) {
+      return null;
+    }
 
     try {
-      await this.dataSource.query(query, [userId]);
+      return this.userRegistrationEntity.findOne({
+        where: { userId },
+      });
     } catch (e) {
       console.log(e);
       throw new DomainException({
         code: DomainExceptionCode.InternalServerError,
-        message: "Failed to confirm user registration",
+        message: "Failed to get row with registration confirmation code",
         extensions: [
           {
             field: "",
-            message: "Failed to confirm user registration",
+            message: "Failed to get row with registration confirmation code",
           },
         ],
       });
     }
   }
 
-  async setPasswordRecoveryCode_pg(dto: PasswordRecoveryEntity): Promise<void> {
-    const query = `
-        INSERT INTO ${SETTINGS.TABLES.USERS_PASSWORD_RECOVERY_INFO}
-            ("recoveryCode","codeExpirationDate","userId")
-            VALUES
-            ($1, $2, $3)
-    `;
-
+  async save_userPasswordRecoveryInfo_typeorm(
+    passwordRecoveryInfo: UserPasswordRecovery,
+  ): Promise<void> {
     try {
-      await this.dataSource.query(query, [
-        dto.recoveryCode,
-        dto.codeExpirationDate,
-        dto.userId,
-      ]);
+      await this.userPasswordRecoveryEntity.save(passwordRecoveryInfo);
     } catch (e) {
       console.log(e);
       throw new DomainException({
@@ -288,20 +240,17 @@ export class UsersRepository {
     }
   }
 
-  async findPasswordRecoveryInfoByRecoveryCode_pg(
+  async findPasswordRecoveryInfoByRecoveryCode_typeorm(
     recoveryCode: string,
-  ): Promise<PasswordRecoveryEntity | null> {
+  ): Promise<UserPasswordRecovery | null> {
     if (!isValidUUID(recoveryCode)) {
       return null;
     }
 
-    const query = `
-       SELECT * FROM ${SETTINGS.TABLES.USERS_PASSWORD_RECOVERY_INFO} WHERE "recoveryCode" = $1
-    `;
-
     try {
-      const response = await this.dataSource.query(query, [recoveryCode]);
-      return response[0];
+      return this.userPasswordRecoveryEntity.findOne({
+        where: { recoveryCode },
+      });
     } catch (e) {
       console.log(e);
       throw new DomainException({
@@ -317,44 +266,14 @@ export class UsersRepository {
     }
   }
 
-  async updateUserPassword_pg(dto: {
-    userId: string;
-    newPassword: string;
-  }): Promise<void> {
-    const query = `
-       UPDATE ${SETTINGS.TABLES.USERS}
-        SET "passwordHash" = '${dto.newPassword}'
-        WHERE "id" = $1
-    `;
-
-    try {
-      await this.dataSource.query(query, [dto.userId]);
-    } catch {
-      throw new DomainException({
-        code: DomainExceptionCode.InternalServerError,
-        message: "Failed to update user password",
-        extensions: [
-          {
-            field: "",
-            message: "Failed to update user password",
-          },
-        ],
-      });
-    }
-  }
-
-  async findByLoginOrEmail_pg(dto: {
+  async findByLoginOrEmail_typeorm(dto: {
     login: string;
     email: string;
-  }): Promise<UserEntity> {
-    const query = `
-       SELECT * FROM ${SETTINGS.TABLES.USERS}
-        WHERE "login" = $1 OR "email" = $2
-    `;
-
+  }): Promise<User | null> {
     try {
-      const result = await this.dataSource.query(query, [dto.login, dto.email]);
-      return result?.[0];
+      return this.userEntity.findOne({
+        where: [{ login: dto.login }, { email: dto.email }],
+      });
     } catch {
       throw new DomainException({
         code: DomainExceptionCode.InternalServerError,

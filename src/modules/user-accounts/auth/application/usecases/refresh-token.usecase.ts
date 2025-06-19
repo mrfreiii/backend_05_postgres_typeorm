@@ -4,14 +4,12 @@ import {
   RefreshTokenInputDto,
   RefreshTokenOutputDto,
 } from "../dto/refresh-token.dto";
+import { parseRefreshToken } from "../../helpers";
+import { getDeviceTitle } from "../../../sessions/helpers";
 import { TokenGenerationService } from "../tokenGeneration.service";
 import { DomainException } from "../../../../../core/exceptions/domain-exceptions";
 import { SessionsRepository } from "../../../sessions/infrastructure/sessions.repository";
 import { DomainExceptionCode } from "../../../../../core/exceptions/domain-exception-codes";
-import {
-  SessionEntity,
-  SessionEntityType,
-} from "../../../sessions/domain/session.entity.pg";
 
 export class RefreshTokenCommand {
   constructor(public dto: RefreshTokenInputDto) {}
@@ -24,14 +22,13 @@ export class RefreshTokenCommandHandler
   constructor(
     private sessionsRepository: SessionsRepository,
     private tokenGenerationService: TokenGenerationService,
-    private sessionEntity: SessionEntity,
   ) {}
 
   async execute({ dto }: RefreshTokenCommand): Promise<RefreshTokenOutputDto> {
     const { payload, userAgent, ip } = dto;
 
     const session =
-      await this.sessionsRepository.findBy_userId_deviceId_version_pg({
+      await this.sessionsRepository.findBy_userId_deviceId_version_typeorm({
         userId: payload.userId,
         deviceId: payload.deviceId,
         version: payload.version,
@@ -58,16 +55,17 @@ export class RefreshTokenCommandHandler
       deviceId: payload.deviceId,
     });
 
-    const updatedSession: SessionEntityType = this.sessionEntity.update({
-      session,
-      newValues: {
-        ip,
-        userAgent,
-        refreshToken,
-      },
-    });
+    const deviceTitle = getDeviceTitle(userAgent);
+    const { issuedAt, expirationTime, version } =
+      parseRefreshToken(refreshToken);
 
-    await this.sessionsRepository.updateSession_pg(updatedSession);
+    session.ip = ip || "unknown ip";
+    session.title = deviceTitle;
+    session.version = version;
+    session.issuedAt = issuedAt;
+    session.expirationTime = expirationTime;
+
+    await this.sessionsRepository.save_session_typeorm(session);
 
     return Promise.resolve({
       accessToken,

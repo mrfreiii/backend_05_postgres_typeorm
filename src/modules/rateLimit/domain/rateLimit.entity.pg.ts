@@ -18,5 +18,4 @@ export class RateLimitEntity {
   }
 }
 
-export type RateLimitEntityType = Omit<RateLimitEntity, "createInstance">
-
+export type RateLimitEntityType = Omit<RateLimitEntity, "createInstance">;

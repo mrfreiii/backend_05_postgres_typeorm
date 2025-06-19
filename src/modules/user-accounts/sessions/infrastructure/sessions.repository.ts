@@ -1,71 +1,54 @@
-import { DataSource } from "typeorm";
 import { Injectable } from "@nestjs/common";
 import { validate as isValidUUID } from "uuid";
-import { InjectDataSource } from "@nestjs/typeorm";
+import { DataSource, Repository } from "typeorm";
+import { InjectDataSource, InjectRepository } from "@nestjs/typeorm";
 
 import { SETTINGS } from "../../../../settings";
+import { Session } from "../entity/session.entity.typeorm";
 import { SessionEntityType } from "../domain/session.entity.pg";
 import { DomainException } from "../../../../core/exceptions/domain-exceptions";
 import { DomainExceptionCode } from "../../../../core/exceptions/domain-exception-codes";
 
 @Injectable()
 export class SessionsRepository {
-  constructor(@InjectDataSource() private dataSource: DataSource) {}
+  constructor(
+    @InjectDataSource() private dataSource: DataSource,
+    @InjectRepository(Session) private sessionEntity: Repository<Session>,
+  ) {}
 
-  async createSession_pg(session: SessionEntityType) {
-    const query = `
-        INSERT INTO ${SETTINGS.TABLES.SESSIONS}
-            ("userId","deviceId","ip","title","version","issuedAt","expirationTime")
-            VALUES
-            ($1, $2, $3, $4, $5, $6, $7)
-    `;
-
+  async save_session_typeorm(session: Session) {
     try {
-      await this.dataSource.query(query, [
-        session.userId,
-        session.deviceId,
-        session.ip,
-        session.title,
-        session.version,
-        session.issuedAt,
-        session.expirationTime,
-      ]);
+      await this.sessionEntity.save(session);
     } catch (e) {
       console.log(e);
       throw new DomainException({
         code: DomainExceptionCode.InternalServerError,
-        message: "Failed to create a session",
+        message: "Failed to save a session",
         extensions: [
           {
             field: "",
-            message: "Failed to create a session",
+            message: "Failed to save a session",
           },
         ],
       });
     }
   }
 
-  async findBy_userId_deviceId_version_pg(dto: {
+  async findBy_userId_deviceId_version_typeorm(dto: {
     userId: string;
     deviceId: string;
     version: number;
-  }): Promise<SessionEntityType> {
+  }): Promise<Session | null> {
     const { userId, deviceId, version } = dto;
 
-    const query = `
-        SELECT * FROM ${SETTINGS.TABLES.SESSIONS}
-            WHERE "userId" = $1
-            AND "deviceId" = $2
-            AND "version" = $3
-    `;
-
     try {
-      const result = await this.dataSource.query(query, [
-        userId,
-        deviceId,
-        version,
-      ]);
-      return result?.[0];
+      return this.sessionEntity.findOne({
+        where: {
+          userId,
+          deviceId,
+          version,
+        },
+      });
     } catch {
       throw new DomainException({
         code: DomainExceptionCode.InternalServerError,
@@ -80,49 +63,9 @@ export class SessionsRepository {
     }
   }
 
-  async updateSession_pg(session: SessionEntityType): Promise<void> {
-    const query = `
-       UPDATE ${SETTINGS.TABLES.SESSIONS}
-        SET "ip" = $1,
-            "title" = $2,
-            "version" = $3,
-            "issuedAt" = $4,
-            "expirationTime" = $5
-        WHERE "deviceId" = $6
-    `;
-
+  async deleteSession_typeorm(session: Session): Promise<void> {
     try {
-      await this.dataSource.query(query, [
-        session.ip,
-        session.title,
-        session.version,
-        session.issuedAt,
-        session.expirationTime,
-        session.deviceId,
-      ]);
-    } catch (e) {
-      console.log(e);
-      throw new DomainException({
-        code: DomainExceptionCode.InternalServerError,
-        message: "Failed to update session",
-        extensions: [
-          {
-            field: "",
-            message: "Failed to update session",
-          },
-        ],
-      });
-    }
-  }
-
-  async deleteSession_pg(deviceId: string): Promise<void> {
-    const query = `
-        DELETE FROM ${SETTINGS.TABLES.SESSIONS}
-        WHERE "deviceId" = $1
-    `;
-
-    try {
-      await this.dataSource.query(query, [deviceId]);
+      await this.sessionEntity.delete(session);
     } catch (e) {
       console.log(e);
       throw new DomainException({

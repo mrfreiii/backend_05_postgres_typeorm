@@ -1,12 +1,13 @@
 import { Module } from "@nestjs/common";
+import { TypeOrmModule } from "@nestjs/typeorm";
 
-import { RateLimitEntity } from "./domain/rateLimit.entity.pg";
+import { RateLimit } from "./entity/rateLimit.entity.typeorm";
 import { RateLimitRepository } from "./infrastructure/rateLimit.repository";
 
 @Module({
-  imports: [],
+  imports: [TypeOrmModule.forFeature([RateLimit])],
   controllers: [],
-  providers: [RateLimitRepository, RateLimitEntity],
-  exports: [RateLimitEntity, RateLimitRepository],
+  providers: [RateLimitRepository],
+  exports: [RateLimitRepository, TypeOrmModule.forFeature([RateLimit])],
 })
 export class RateLimitModule {}

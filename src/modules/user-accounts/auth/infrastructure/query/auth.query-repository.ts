@@ -7,7 +7,7 @@ import { UsersRepository } from "../../../users/infrastructure/users.repository"
 export class AuthQueryRepository {
   constructor(private usersRepository: UsersRepository) {}
 
-  async me_pg(userId: string): Promise<MeViewDtoPg> {
+  async me_typeorm(userId: string): Promise<MeViewDtoPg> {
     const user = await this.usersRepository.findOrNotFoundFail_typeorm(userId);
 
     return MeViewDtoPg.mapToView(user);

@@ -1,32 +1,29 @@
-import { DataSource } from "typeorm";
 import { Injectable } from "@nestjs/common";
-import { InjectDataSource } from "@nestjs/typeorm";
+import { MoreThan, Repository } from "typeorm";
+import { InjectRepository } from "@nestjs/typeorm";
 
-import { SETTINGS } from "../../../settings";
-import { RateLimitEntityType } from "../domain/rateLimit.entity.pg";
+import { RateLimit } from "../entity/rateLimit.entity.typeorm";
 import { GetRequestCountInputDto } from "./dto/get-requests-count.input-dto";
 import { DomainException } from "../../../core/exceptions/domain-exceptions";
 import { DomainExceptionCode } from "../../../core/exceptions/domain-exception-codes";
 
 @Injectable()
 export class RateLimitRepository {
-  constructor(@InjectDataSource() private dataSource: DataSource) {}
+  constructor(
+    @InjectRepository(RateLimit) private rateLimitEntity: Repository<RateLimit>,
+  ) {}
 
-  async getRequestCount_pg(dto: GetRequestCountInputDto): Promise<number> {
-    const query = `
-        SELECT count(*) FROM ${SETTINGS.TABLES.RATE_LIMIT}
-            WHERE "url" = $1
-            AND "ip" = $2
-            AND "date" > $3
-    `;
+  async getRequestCount_typeorm(dto: GetRequestCountInputDto): Promise<number> {
+    const { url, ip, date } = dto;
 
     try {
-      const response = await this.dataSource.query(query, [
-        dto.url,
-        dto.ip,
-        dto.date,
-      ]);
-      return Number(response?.[0]?.count);
+      return this.rateLimitEntity.count({
+        where: {
+          url,
+          ip,
+          date: MoreThan(date),
+        },
+      });
     } catch (e) {
       console.log(e);
       throw new DomainException({
@@ -42,20 +39,9 @@ export class RateLimitRepository {
     }
   }
 
-  async addRequest_pg(request: RateLimitEntityType) {
-    const query = `
-        INSERT INTO ${SETTINGS.TABLES.RATE_LIMIT}
-            ("url","ip","date")
-            VALUES
-            ($1, $2, $3)
-    `;
-
+  async addRequest_typeorm(request: RateLimit) {
     try {
-      await this.dataSource.query(query, [
-        request.url,
-        request.ip,
-        request.date,
-      ]);
+      await this.rateLimitEntity.save(request);
     } catch (e) {
       console.log(e);
       throw new DomainException({

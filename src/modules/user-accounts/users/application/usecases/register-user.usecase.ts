@@ -1,8 +1,11 @@
+import { add } from "date-fns";
+import { Repository } from "typeorm";
+import { InjectRepository } from "@nestjs/typeorm";
 import { CommandBus, CommandHandler, ICommandHandler } from "@nestjs/cqrs";
 
 import { CreateUserCommand } from "./create-user.usecase";
 import { UsersRepository } from "../../infrastructure/users.repository";
-import { RegistrationEntity } from "../../domain/registration.entity.pg";
+import { UserRegistration } from "../../entity/registation.entity.typeorm";
 import { EmailService } from "../../../../notifications/application/email.service";
 import { RegisterUserInputDto } from "../../../auth/api/input-dto/register-user.input-dto";
 
@@ -23,7 +26,8 @@ export class RegisterUserCommandHandler
     private usersRepository: UsersRepository,
     private commandBus: CommandBus,
     private emailService: EmailService,
-    private registrationEntity: RegistrationEntity,
+    @InjectRepository(UserRegistration)
+    private userRegistrationEntity: Repository<UserRegistration>,
   ) {}
 
   async execute({ inputData }: RegisterUserCommand): Promise<void> {
@@ -35,10 +39,14 @@ export class RegisterUserCommandHandler
     const user =
       await this.usersRepository.findOrNotFoundFail_typeorm(createdUserId);
 
-    const registrationInfo =
-      this.registrationEntity.createInstance(createdUserId);
+    const registrationInfo = this.userRegistrationEntity.create({
+      codeExpirationDate: add(new Date(), {
+        minutes: 2,
+      }).getTime(),
+      userId: user.id,
+    });
 
-    await this.usersRepository.setRegistrationConfirmationCode_pg(
+    await this.usersRepository.save_userRegistrationInfo_typeorm(
       registrationInfo,
     );
 

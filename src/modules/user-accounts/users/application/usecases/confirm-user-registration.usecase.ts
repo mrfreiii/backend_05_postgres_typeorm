@@ -16,7 +16,7 @@ export class ConfirmUserRegistrationCommandHandler
 
   async execute({ code }: ConfirmUserRegistrationCommand): Promise<void> {
     const registrationInfo =
-      await this.usersRepository.findRegistrationInfoByConfirmationCode_pg(
+      await this.usersRepository.findRegistrationInfoByConfirmationCode_typeorm(
         code,
       );
     if (!registrationInfo) {
@@ -61,8 +61,8 @@ export class ConfirmUserRegistrationCommandHandler
       });
     }
 
-    await this.usersRepository.confirmUserRegistration_pg(
-      registrationInfo.userId,
-    );
+    user.isEmailConfirmed = true;
+
+    await this.usersRepository.save_user_typeorm(user);
   }
 }

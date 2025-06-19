@@ -67,6 +67,6 @@ export class CreateUserCommandHandler
       isEmailConfirmed: false,
     });
 
-    return this.usersRepository.createUser_typeorm(newUser);
+    return this.usersRepository.save_user_typeorm(newUser);
   }
 }
