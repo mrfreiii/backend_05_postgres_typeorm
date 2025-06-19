@@ -42,86 +42,86 @@ export class BlogsAdminController {
     private postsQueryRepository: PostsQueryRepository,
   ) {}
 
-  @Get()
-  async getAllBlogs(
-    @Query() query: GetBlogsQueryParams,
-  ): Promise<PaginatedViewDto<BlogViewDtoPg[]>> {
-    return this.blogsQueryRepository.getAll_pg(query);
-  }
+  // @Get()
+  // async getAllBlogs(
+  //   @Query() query: GetBlogsQueryParams,
+  // ): Promise<PaginatedViewDto<BlogViewDtoPg[]>> {
+  //   return this.blogsQueryRepository.getAll_pg(query);
+  // }
 
-  @Post()
-  async createBlog(@Body() body: CreateBlogInputDto): Promise<BlogViewDtoPg> {
-    const blogId = await this.blogsService.createBlog(body);
+  // @Post()
+  // async createBlog(@Body() body: CreateBlogInputDto): Promise<BlogViewDtoPg> {
+  //   const blogId = await this.blogsService.createBlog(body);
+  //
+  //   return this.blogsQueryRepository.getByIdOrNotFoundFail_pg(blogId);
+  // }
 
-    return this.blogsQueryRepository.getByIdOrNotFoundFail_pg(blogId);
-  }
+  // @Put(":id")
+  // @HttpCode(HttpStatus.NO_CONTENT)
+  // async updateBlog(
+  //   @Param("id") id: string,
+  //   @Body() body: UpdateBlogInputDto,
+  // ): Promise<void> {
+  //   return this.blogsService.updateBlog({ id, dto: body });
+  // }
 
-  @Put(":id")
-  @HttpCode(HttpStatus.NO_CONTENT)
-  async updateBlog(
-    @Param("id") id: string,
-    @Body() body: UpdateBlogInputDto,
-  ): Promise<void> {
-    return this.blogsService.updateBlog({ id, dto: body });
-  }
+  // @ApiParam({ name: "id" })
+  // @Delete(":id")
+  // @HttpCode(HttpStatus.NO_CONTENT)
+  // async deleteBlog(@Param("id") id: string): Promise<void> {
+  //   return this.blogsService.deleteBlog(id);
+  // }
 
-  @ApiParam({ name: "id" })
-  @Delete(":id")
-  @HttpCode(HttpStatus.NO_CONTENT)
-  async deleteBlog(@Param("id") id: string): Promise<void> {
-    return this.blogsService.deleteBlog(id);
-  }
+  // @Post(":id/posts")
+  // async createPostsByBlogId(
+  //   @Param("id") id: string,
+  //   @Body() body: CreatePostByBlogIdInputDto,
+  // ): Promise<PostViewDtoPg> {
+  //   await this.blogsQueryRepository.getByIdOrNotFoundFail_pg(id);
+  //
+  //   const postId = await this.postsService.createPost_pg({ ...body, blogId: id });
+  //
+  //   return this.postsQueryRepository.getByIdOrNotFoundFail_pg(postId);
+  // }
 
-  @Post(":id/posts")
-  async createPostsByBlogId(
-    @Param("id") id: string,
-    @Body() body: CreatePostByBlogIdInputDto,
-  ): Promise<PostViewDtoPg> {
-    await this.blogsQueryRepository.getByIdOrNotFoundFail_pg(id);
+  // @Get(":id/posts")
+  // async getPostsByBlogId(
+  //   @Query() query: GetPostsQueryParams,
+  //   @Param("id") id: string,
+  // ): Promise<PaginatedViewDto<PostViewDtoPg[]>> {
+  //   await this.blogsQueryRepository.getByIdOrNotFoundFail_pg(id);
+  //
+  //   return this.postsQueryRepository.getAll_pg({
+  //     requestParams: query,
+  //     blogId: id,
+  //   });
+  // }
 
-    const postId = await this.postsService.createPost_pg({ ...body, blogId: id });
+  // @Put(":blogId/posts/:postId")
+  // @HttpCode(HttpStatus.NO_CONTENT)
+  // async updatePostByBlogId(
+  //   @Param("blogId") blogId: string,
+  //   @Param("postId") postId: string,
+  //   @Body() body: UpdatePostByBlogInputDto,
+  // ): Promise<void> {
+  //   return this.postsService.updatePost_pg({
+  //     id: postId,
+  //     dto: {
+  //       ...body,
+  //       blogId,
+  //     },
+  //   });
+  // }
 
-    return this.postsQueryRepository.getByIdOrNotFoundFail_pg(postId);
-  }
-
-  @Get(":id/posts")
-  async getPostsByBlogId(
-    @Query() query: GetPostsQueryParams,
-    @Param("id") id: string,
-  ): Promise<PaginatedViewDto<PostViewDtoPg[]>> {
-    await this.blogsQueryRepository.getByIdOrNotFoundFail_pg(id);
-
-    return this.postsQueryRepository.getAll_pg({
-      requestParams: query,
-      blogId: id,
-    });
-  }
-
-  @Put(":blogId/posts/:postId")
-  @HttpCode(HttpStatus.NO_CONTENT)
-  async updatePostByBlogId(
-    @Param("blogId") blogId: string,
-    @Param("postId") postId: string,
-    @Body() body: UpdatePostByBlogInputDto,
-  ): Promise<void> {
-    return this.postsService.updatePost_pg({
-      id: postId,
-      dto: {
-        ...body,
-        blogId,
-      },
-    });
-  }
-
-  @Delete(":blogId/posts/:postId")
-  @HttpCode(HttpStatus.NO_CONTENT)
-  async deletePostByBlogId(
-    @Param("blogId") blogId: string,
-    @Param("postId") postId: string,
-  ): Promise<void> {
-    return this.postsService.deletePost_pg({
-      postId,
-      blogId,
-    });
-  }
+  // @Delete(":blogId/posts/:postId")
+  // @HttpCode(HttpStatus.NO_CONTENT)
+  // async deletePostByBlogId(
+  //   @Param("blogId") blogId: string,
+  //   @Param("postId") postId: string,
+  // ): Promise<void> {
+  //   return this.postsService.deletePost_pg({
+  //     postId,
+  //     blogId,
+  //   });
+  // }
 }

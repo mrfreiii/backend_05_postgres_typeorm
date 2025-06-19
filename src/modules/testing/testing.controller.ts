@@ -52,100 +52,100 @@ export class TestingController {
     }
   }
 
-  @Get("registration-code/:email")
-  async getRegistrationCodeByEmail(@Param("email") email: string) {
-    const userQuery = `
-       SELECT * FROM ${SETTINGS.TABLES.USERS} WHERE "email" = $1
-    `;
+  // @Get("registration-code/:email")
+  // async getRegistrationCodeByEmail(@Param("email") email: string) {
+  //   const userQuery = `
+  //      SELECT * FROM ${SETTINGS.TABLES.USERS} WHERE "email" = $1
+  //   `;
+  //
+  //   try {
+  //     const userResponse = await this.dataSource.query(userQuery, [email]);
+  //     const user = userResponse[0];
+  //
+  //     if (!user) {
+  //       throw new DomainException({
+  //         code: DomainExceptionCode.NotFound,
+  //         message: "User not found",
+  //         extensions: [
+  //           {
+  //             field: "",
+  //             message: "User not found",
+  //           },
+  //         ],
+  //       });
+  //     }
+  //
+  //     const codeQuery = `
+  //      SELECT * FROM ${SETTINGS.TABLES.USERS_REGISTRATION_INFO} WHERE "userId" = $1
+  //   `;
+  //
+  //     const codeResponse = await this.dataSource.query(codeQuery, [user.id]);
+  //     return { code: codeResponse[0].confirmationCode };
+  //   } catch {
+  //     throw new DomainException({
+  //       code: DomainExceptionCode.InternalServerError,
+  //       message: "Failed to get user registration confirmation code",
+  //       extensions: [
+  //         {
+  //           field: "",
+  //           message: "Failed to get user registration confirmation code",
+  //         },
+  //       ],
+  //     });
+  //   }
+  // }
 
-    try {
-      const userResponse = await this.dataSource.query(userQuery, [email]);
-      const user = userResponse[0];
+  // @Get("password-recovery-code/:email")
+  // async getPasswordRecoveryCodeByEmail(@Param("email") email: string) {
+  //   const userQuery = `
+  //      SELECT * FROM ${SETTINGS.TABLES.USERS} WHERE "email" = $1
+  //   `;
+  //
+  //   try {
+  //     const userResponse = await this.dataSource.query(userQuery, [email]);
+  //     const user = userResponse[0];
+  //
+  //     if (!user) {
+  //       throw new DomainException({
+  //         code: DomainExceptionCode.NotFound,
+  //         message: "User not found",
+  //         extensions: [
+  //           {
+  //             field: "",
+  //             message: "User not found",
+  //           },
+  //         ],
+  //       });
+  //     }
+  //
+  //     const codeQuery = `
+  //      SELECT * FROM ${SETTINGS.TABLES.USERS_PASSWORD_RECOVERY_INFO} WHERE "userId" = $1
+  //   `;
+  //
+  //     const codeResponse = await this.dataSource.query(codeQuery, [user.id]);
+  //     return { code: codeResponse[0].recoveryCode };
+  //   } catch {
+  //     throw new DomainException({
+  //       code: DomainExceptionCode.InternalServerError,
+  //       message: "Failed to get user password recovery code",
+  //       extensions: [
+  //         {
+  //           field: "",
+  //           message: "Failed to get user password recovery code",
+  //         },
+  //       ],
+  //     });
+  //   }
+  // }
 
-      if (!user) {
-        throw new DomainException({
-          code: DomainExceptionCode.NotFound,
-          message: "User not found",
-          extensions: [
-            {
-              field: "",
-              message: "User not found",
-            },
-          ],
-        });
-      }
-
-      const codeQuery = `
-       SELECT * FROM ${SETTINGS.TABLES.USERS_REGISTRATION_INFO} WHERE "userId" = $1
-    `;
-
-      const codeResponse = await this.dataSource.query(codeQuery, [user.id]);
-      return { code: codeResponse[0].confirmationCode };
-    } catch {
-      throw new DomainException({
-        code: DomainExceptionCode.InternalServerError,
-        message: "Failed to get user registration confirmation code",
-        extensions: [
-          {
-            field: "",
-            message: "Failed to get user registration confirmation code",
-          },
-        ],
-      });
-    }
-  }
-
-  @Get("password-recovery-code/:email")
-  async getPasswordRecoveryCodeByEmail(@Param("email") email: string) {
-    const userQuery = `
-       SELECT * FROM ${SETTINGS.TABLES.USERS} WHERE "email" = $1
-    `;
-
-    try {
-      const userResponse = await this.dataSource.query(userQuery, [email]);
-      const user = userResponse[0];
-
-      if (!user) {
-        throw new DomainException({
-          code: DomainExceptionCode.NotFound,
-          message: "User not found",
-          extensions: [
-            {
-              field: "",
-              message: "User not found",
-            },
-          ],
-        });
-      }
-
-      const codeQuery = `
-       SELECT * FROM ${SETTINGS.TABLES.USERS_PASSWORD_RECOVERY_INFO} WHERE "userId" = $1
-    `;
-
-      const codeResponse = await this.dataSource.query(codeQuery, [user.id]);
-      return { code: codeResponse[0].recoveryCode };
-    } catch {
-      throw new DomainException({
-        code: DomainExceptionCode.InternalServerError,
-        message: "Failed to get user password recovery code",
-        extensions: [
-          {
-            field: "",
-            message: "Failed to get user password recovery code",
-          },
-        ],
-      });
-    }
-  }
-
-  @Delete("rate-limits")
-  @HttpCode(HttpStatus.NO_CONTENT)
-  async deleteRateLimit() {
-    const query = `TRUNCATE TABLE ${SETTINGS.TABLES.RATE_LIMIT}`;
-    await this.dataSource.query(query);
-
-    return {
-      status: "succeeded",
-    };
-  }
+  // @Delete("rate-limits")
+  // @HttpCode(HttpStatus.NO_CONTENT)
+  // async deleteRateLimit() {
+  //   const query = `TRUNCATE TABLE ${SETTINGS.TABLES.RATE_LIMIT}`;
+  //   await this.dataSource.query(query);
+  //
+  //   return {
+  //     status: "succeeded",
+  //   };
+  // }
 }

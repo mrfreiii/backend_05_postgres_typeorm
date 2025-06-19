@@ -32,23 +32,23 @@ export class UsersController {
     private commandBus: CommandBus,
   ) {}
 
-  @Get()
-  async getAll(
-    @Query() query: GetUsersQueryParams,
-  ): Promise<PaginatedViewDto<UserViewDtoPg[]>> {
-    return this.usersQueryRepository.getAll_pg(query);
-  }
+  // @Get()
+  // async getAll(
+  //   @Query() query: GetUsersQueryParams,
+  // ): Promise<PaginatedViewDto<UserViewDtoPg[]>> {
+  //   return this.usersQueryRepository.getAll_pg(query);
+  // }
 
-  @Post()
-  async createUser(@Body() body: CreateUserInputDto): Promise<UserViewDtoPg> {
-    const userId = await this.commandBus.execute(new CreateUserCommand(body));
-    return this.usersQueryRepository.getByIdOrNotFoundFail_pg(userId);
-  }
+  // @Post()
+  // async createUser(@Body() body: CreateUserInputDto): Promise<UserViewDtoPg> {
+  //   const userId = await this.commandBus.execute(new CreateUserCommand(body));
+  //   return this.usersQueryRepository.getByIdOrNotFoundFail_pg(userId);
+  // }
 
-  @ApiParam({ name: "id" })
-  @Delete(":id")
-  @HttpCode(HttpStatus.NO_CONTENT)
-  async deleteUser(@Param("id") id: string): Promise<void> {
-    return this.commandBus.execute(new DeleteUserCommand(id));
-  }
+  // @ApiParam({ name: "id" })
+  // @Delete(":id")
+  // @HttpCode(HttpStatus.NO_CONTENT)
+  // async deleteUser(@Param("id") id: string): Promise<void> {
+  //   return this.commandBus.execute(new DeleteUserCommand(id));
+  // }
 }

@@ -26,40 +26,40 @@ export class BlogsPublicController {
     private postsQueryRepository: PostsQueryRepository,
   ) {}
 
-  @Get()
-  async getAllBlogs(
-    @Query() query: GetBlogsQueryParams,
-  ): Promise<PaginatedViewDto<BlogViewDtoPg[]>> {
-    return this.blogsQueryRepository.getAll_pg(query);
-  }
+  // @Get()
+  // async getAllBlogs(
+  //   @Query() query: GetBlogsQueryParams,
+  // ): Promise<PaginatedViewDto<BlogViewDtoPg[]>> {
+  //   return this.blogsQueryRepository.getAll_pg(query);
+  // }
 
-  @UseGuards(JwtOptionalAuthGuard)
-  @Get(":id/posts")
-  async getPostsByBlogId(
-    @Query() query: GetPostsQueryParams,
-    @Param("id") id: string,
-    @ExtractUserIfExistsFromRequest() user: UserContextDto | null,
-  ): Promise<PaginatedViewDto<PostViewDtoPg[]>> {
-    await this.blogsQueryRepository.getByIdOrNotFoundFail_pg(id);
+  // @UseGuards(JwtOptionalAuthGuard)
+  // @Get(":id/posts")
+  // async getPostsByBlogId(
+  //   @Query() query: GetPostsQueryParams,
+  //   @Param("id") id: string,
+  //   @ExtractUserIfExistsFromRequest() user: UserContextDto | null,
+  // ): Promise<PaginatedViewDto<PostViewDtoPg[]>> {
+  //   await this.blogsQueryRepository.getByIdOrNotFoundFail_pg(id);
+  //
+  //   const paginatedPosts = await this.postsQueryRepository.getAll_pg({
+  //     requestParams: query,
+  //     blogId: id,
+  //   });
+  //
+  //   const postsWithLikesInfo = await this.postsService.getPostsLikeInfo_pg({
+  //     posts: paginatedPosts.items,
+  //     userId: user?.id || null,
+  //   });
+  //
+  //   return {
+  //     ...paginatedPosts,
+  //     items: postsWithLikesInfo,
+  //   };
+  // }
 
-    const paginatedPosts = await this.postsQueryRepository.getAll_pg({
-      requestParams: query,
-      blogId: id,
-    });
-
-    const postsWithLikesInfo = await this.postsService.getPostsLikeInfo_pg({
-      posts: paginatedPosts.items,
-      userId: user?.id || null,
-    });
-
-    return {
-      ...paginatedPosts,
-      items: postsWithLikesInfo,
-    };
-  }
-
-  @Get(":id")
-  async getBlogById(@Param("id") id: string): Promise<BlogViewDtoPg> {
-    return this.blogsQueryRepository.getByIdOrNotFoundFail_pg(id);
-  }
+  // @Get(":id")
+  // async getBlogById(@Param("id") id: string): Promise<BlogViewDtoPg> {
+  //   return this.blogsQueryRepository.getByIdOrNotFoundFail_pg(id);
+  // }
 }
