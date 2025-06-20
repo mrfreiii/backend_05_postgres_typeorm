@@ -1,18 +1,15 @@
+import { Not, Repository } from "typeorm";
 import { Injectable } from "@nestjs/common";
 import { validate as isValidUUID } from "uuid";
-import { DataSource, Repository } from "typeorm";
-import { InjectDataSource, InjectRepository } from "@nestjs/typeorm";
+import { InjectRepository } from "@nestjs/typeorm";
 
-import { SETTINGS } from "../../../../settings";
 import { Session } from "../entity/session.entity.typeorm";
-import { SessionEntityType } from "../domain/session.entity.pg";
 import { DomainException } from "../../../../core/exceptions/domain-exceptions";
 import { DomainExceptionCode } from "../../../../core/exceptions/domain-exception-codes";
 
 @Injectable()
 export class SessionsRepository {
   constructor(
-    @InjectDataSource() private dataSource: DataSource,
     @InjectRepository(Session) private sessionEntity: Repository<Session>,
   ) {}
 
@@ -81,7 +78,7 @@ export class SessionsRepository {
     }
   }
 
-  async findByDeviceId_pg(deviceId: string): Promise<SessionEntityType> {
+  async findByDeviceId_typeorm(deviceId: string): Promise<Session | null> {
     if (!isValidUUID(deviceId)) {
       throw new DomainException({
         code: DomainExceptionCode.NotFound,
@@ -95,14 +92,12 @@ export class SessionsRepository {
       });
     }
 
-    const query = `
-        SELECT * FROM ${SETTINGS.TABLES.SESSIONS}
-            WHERE "deviceId" = $1
-    `;
-
     try {
-      const result = await this.dataSource.query(query, [deviceId]);
-      return result?.[0];
+      return this.sessionEntity.findOne({
+        where: {
+          deviceId,
+        },
+      });
     } catch {
       throw new DomainException({
         code: DomainExceptionCode.InternalServerError,
@@ -117,18 +112,17 @@ export class SessionsRepository {
     }
   }
 
-  async deleteAllOtherSessions_pg(dto: {
+  async deleteAllOtherSessions_typeorm(dto: {
     currentDeviceId: string;
     userId: string;
   }): Promise<void> {
-    const query = `
-        DELETE FROM ${SETTINGS.TABLES.SESSIONS}
-        WHERE "userId" = $1 
-        AND "deviceId" != $2
-    `;
+    const { userId, currentDeviceId } = dto;
 
     try {
-      await this.dataSource.query(query, [dto.userId, dto.currentDeviceId]);
+      await this.sessionEntity.delete({
+        userId,
+        deviceId: Not(currentDeviceId),
+      });
     } catch (e) {
       console.log(e);
       throw new DomainException({

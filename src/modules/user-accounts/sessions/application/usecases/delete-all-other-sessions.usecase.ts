@@ -36,7 +36,7 @@ export class DeleteAllOtherSessionCommandHandler
       });
     }
 
-    await this.sessionsRepository.deleteAllOtherSessions_pg({
+    await this.sessionsRepository.deleteAllOtherSessions_typeorm({
       userId: payload.userId,
       currentDeviceId: payload.deviceId,
     });

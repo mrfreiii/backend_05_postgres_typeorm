@@ -38,9 +38,10 @@ export class DeleteSessionByIdCommandHandler
       });
     }
 
-    const sessionForDeletion = await this.sessionsRepository.findByDeviceId_pg(
-      deviceIdFromQueryParam,
-    );
+    const sessionForDeletion =
+      await this.sessionsRepository.findByDeviceId_typeorm(
+        deviceIdFromQueryParam,
+      );
     if (!sessionForDeletion) {
       throw new DomainException({
         code: DomainExceptionCode.NotFound,
@@ -67,6 +68,6 @@ export class DeleteSessionByIdCommandHandler
       });
     }
 
-    // await this.sessionsRepository.deleteSession_typeorm(sessionForDeletion.deviceId);
+    await this.sessionsRepository.deleteSession_typeorm(sessionForDeletion);
   }
 }
