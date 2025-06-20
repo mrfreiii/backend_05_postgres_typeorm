@@ -1,9 +1,10 @@
-import { DataSource } from "typeorm";
 import { Injectable } from "@nestjs/common";
 import { validate as isValidUUID } from "uuid";
-import { InjectDataSource } from "@nestjs/typeorm";
+import { DataSource, Repository } from "typeorm";
+import { InjectDataSource, InjectRepository } from "@nestjs/typeorm";
 
 import { SETTINGS } from "../../../../settings";
+import { Post } from "../entity/post.entity.typeorm";
 import { NewestLikesPg } from "../../types/likes.types";
 import { LikeStatusEnum } from "../../enums/likes.enum";
 import { PostEntityType } from "../domain/post.entity.pg";
@@ -13,41 +14,30 @@ import { DomainExceptionCode } from "../../../../core/exceptions/domain-exceptio
 
 @Injectable()
 export class PostsRepository {
-  constructor(@InjectDataSource() private dataSource: DataSource) {}
+  constructor(
+    @InjectDataSource() private dataSource: DataSource,
+    @InjectRepository(Post) private postEntity: Repository<Post>,
+  ) {}
 
-  async createPost_pg(post: PostEntityType): Promise<void> {
-    const query = `
-        INSERT INTO ${SETTINGS.TABLES.POSTS}
-            ("id","title","shortDescription","content","blogId","createdAt")
-            VALUES
-            ($1, $2, $3, $4, $5, $6)
-    `;
-
+  async save_post_typeorm(post: Post): Promise<void> {
     try {
-      await this.dataSource.query(query, [
-        post.id,
-        post.title,
-        post.shortDescription,
-        post.content,
-        post.blogId,
-        post.createdAt,
-      ]);
+      await this.postEntity.save(post);
     } catch (e) {
       console.log(e);
       throw new DomainException({
         code: DomainExceptionCode.InternalServerError,
-        message: "Failed to create post in db",
+        message: "Failed to save post in db",
         extensions: [
           {
             field: "",
-            message: "Failed to create post in db",
+            message: "Failed to save post in db",
           },
         ],
       });
     }
   }
 
-  async getByIdOrNotFoundFail_pg(postId: string): Promise<PostEntityType> {
+  async getByIdOrNotFoundFail_typeorm(postId: string): Promise<Post> {
     if (!isValidUUID(postId)) {
       throw new DomainException({
         code: DomainExceptionCode.NotFound,
@@ -61,19 +51,12 @@ export class PostsRepository {
       });
     }
 
-    let post: PostEntityType;
-
-    const query = `
-       SELECT p.*, b."name" as "blogName"
-       FROM ${SETTINGS.TABLES.POSTS} p 
-         LEFT JOIN ${SETTINGS.TABLES.BLOGS} b
-         ON p."blogId" = b."id"
-           WHERE p."id" = $1 AND p."deletedAt" IS NULL
-    `;
+    let post: Post | null;
 
     try {
-      const result = await this.dataSource.query(query, [postId]);
-      post = result?.[0];
+      post = await this.postEntity.findOne({
+        where: { id: postId },
+      });
     } catch (e) {
       console.log(e);
       throw new DomainException({
@@ -136,18 +119,9 @@ export class PostsRepository {
     }
   }
 
-  async deletePost_pg(dto: {
-    postId: string;
-    deletedAt: string;
-  }): Promise<void> {
-    const query = `
-       UPDATE ${SETTINGS.TABLES.POSTS}
-        SET "deletedAt" = $1
-        WHERE "id" = $2
-    `;
-
+  async deletePost_typeorm(postId: string): Promise<void> {
     try {
-      await this.dataSource.query(query, [dto.deletedAt, dto.postId]);
+      await this.postEntity.softDelete({ id: postId });
     } catch (e) {
       console.log(e);
       throw new DomainException({

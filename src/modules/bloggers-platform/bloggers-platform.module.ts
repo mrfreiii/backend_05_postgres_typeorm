@@ -1,7 +1,9 @@
 import { Module } from "@nestjs/common";
+import { TypeOrmModule } from "@nestjs/typeorm";
 
 import { UserAccountsModule } from "../user-accounts/user-accounts.module";
 
+import { Blog } from "./blogs/entity/blog.entity.typeorm";
 import { BlogEntity } from "./blogs/domain/blog.entity.pg";
 import { BlogsService } from "./blogs/application/blogs.service";
 import { BlogsAdminController } from "./blogs/api/blogs-admin.controller";
@@ -20,6 +22,7 @@ import { CommentsController } from "./comments/api/comments.controller";
 import { CommentsService } from "./comments/application/comments.service";
 import { CommentsRepository } from "./comments/infrastructure/comments.repository";
 import { CommentsQueryRepository } from "./comments/infrastructure/query/comments.query-repository";
+import { Post } from "./posts/entity/post.entity.typeorm";
 
 const controllers = [
   BlogsAdminController,
@@ -41,10 +44,15 @@ const repos = [
 
 const entities = [BlogEntity, PostEntity, CommentEntity];
 
+const typeorm_entities = [Blog, Post];
+
 @Module({
-  imports: [UserAccountsModule],
+  imports: [
+    UserAccountsModule,
+    TypeOrmModule.forFeature([...typeorm_entities]),
+  ],
   controllers: [...controllers],
   providers: [...services, ...repos, ...entities],
-  exports: [],
+  exports: [TypeOrmModule.forFeature([...typeorm_entities])],
 })
 export class BloggersPlatformModule {}

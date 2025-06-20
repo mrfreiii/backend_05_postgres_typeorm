@@ -1,4 +1,4 @@
-import { BlogEntityType } from "../../domain/blog.entity.pg";
+import { Blog } from "../../entity/blog.entity.typeorm";
 
 export class BlogViewDtoPg {
   id: string;
@@ -8,7 +8,7 @@ export class BlogViewDtoPg {
   createdAt: string;
   isMembership: boolean;
 
-  static mapToView(blog: BlogEntityType): BlogViewDtoPg {
+  static mapToView(blog: Blog): BlogViewDtoPg {
     const dto = new BlogViewDtoPg();
 
     dto.id = blog.id;

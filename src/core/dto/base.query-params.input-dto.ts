@@ -2,12 +2,12 @@ import { Type } from "class-transformer";
 import { IsEnum, IsNumber } from "class-validator";
 
 export enum SortDirection {
-  Asc = "asc",
-  Desc = "desc",
-  Ascending = "ascending",
-  Descending = "descending",
-  PositiveNumber = 1,
-  NegativeNumber = -1,
+  Asc = "ASC",
+  Desc = "DESC",
+  // Ascending = "ascending",
+  // Descending = "descending",
+  // PositiveNumber = 1,
+  // NegativeNumber = -1,
 }
 
 export class BaseQueryParams {

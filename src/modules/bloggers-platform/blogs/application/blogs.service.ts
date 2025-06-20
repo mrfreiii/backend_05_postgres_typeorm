@@ -1,7 +1,9 @@
+import { Repository } from "typeorm";
 import { Injectable } from "@nestjs/common";
+import { InjectRepository } from "@nestjs/typeorm";
 
 import { CreateBlogDto } from "../dto/blog.dto";
-import { BlogEntity } from "../domain/blog.entity.pg";
+import { Blog } from "../entity/blog.entity.typeorm";
 import { BlogsRepository } from "../infrastructure/blogs.repository";
 import { UpdateBlogInputDto } from "../api/input-dto/update-blog.input-dto";
 
@@ -9,38 +11,45 @@ import { UpdateBlogInputDto } from "../api/input-dto/update-blog.input-dto";
 export class BlogsService {
   constructor(
     private blogsRepository: BlogsRepository,
-    private blogEntity: BlogEntity,
+    @InjectRepository(Blog) private blogEntity: Repository<Blog>,
   ) {}
 
-  async createBlog(dto: CreateBlogDto): Promise<string> {
-    const blog = this.blogEntity.createInstance({
-      name: dto.name,
-      description: dto.description,
-      websiteUrl: dto.websiteUrl,
+  async createBlog_typeorm(dto: CreateBlogDto): Promise<string> {
+    const { name, description, websiteUrl } = dto;
+
+    const blog = this.blogEntity.create({
+      name,
+      description,
+      websiteUrl,
+      isMembership: false,
     });
 
-    await this.blogsRepository.createBlog_pg(blog);
+    await this.blogsRepository.save_blog_typeorm(blog);
 
     return blog.id;
   }
 
-  async updateBlog({
+  async updateBlog_typeorm({
     id,
     dto,
   }: {
     id: string;
     dto: UpdateBlogInputDto;
   }): Promise<void> {
-    const blog = await this.blogsRepository.findByIdOrNotFoundFail_pg(id);
+    const { name, description, websiteUrl } = dto;
 
-    const updatedBlog = this.blogEntity.update({ blog, newValues: dto });
-    await this.blogsRepository.updateBlog_pg(updatedBlog);
+    const blog = await this.blogsRepository.findByIdOrNotFoundFail_typeorm(id);
+
+    blog.name = name;
+    blog.description = description;
+    blog.websiteUrl = websiteUrl;
+
+    await this.blogsRepository.save_blog_typeorm(blog);
   }
 
   async deleteBlog(id: string) {
-    const blog = await this.blogsRepository.findByIdOrNotFoundFail_pg(id);
+    const blog = await this.blogsRepository.findByIdOrNotFoundFail_typeorm(id);
 
-    const deletedAt = new Date(Date.now()).toISOString();
-    await this.blogsRepository.deleteBlog_pg({ blogId: blog.id, deletedAt });
+    await this.blogsRepository.deleteBlog_typeorm(blog.id);
   }
 }

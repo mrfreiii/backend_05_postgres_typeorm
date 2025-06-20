@@ -1,10 +1,13 @@
+import { Repository } from "typeorm";
 import { Injectable } from "@nestjs/common";
+import { InjectRepository } from "@nestjs/typeorm";
 
 import {
   LikeStatusEnum,
   mapEnumLikeStatusToBdStatus,
 } from "../../enums/likes.enum";
 import { CreatePostDto } from "../dto/post.dto";
+import { Post } from "../entity/post.entity.typeorm";
 import { PostEntity } from "../domain/post.entity.pg";
 import { NewestLikesPg } from "../../types/likes.types";
 import { GetPostByIdDto } from "./dto/get-post-by-id.dto";
@@ -18,27 +21,44 @@ export class PostsService {
   constructor(
     private postsRepository: PostsRepository,
     private blogsRepository: BlogsRepository,
-    private postEntity: PostEntity,
+    private postEntity_: PostEntity,
+    @InjectRepository(Post) private postEntity: Repository<Post>,
   ) {}
 
-  async getPostById_pg(dto: GetPostByIdDto): Promise<PostViewDtoPg> {
-    const { postId, userId } = dto;
+  async createPost_typeorm(dto: CreatePostDto): Promise<string> {
+    await this.blogsRepository.findByIdOrNotFoundFail_typeorm(dto.blogId);
 
-    const post = await this.postsRepository.getByIdOrNotFoundFail_pg(postId);
-
-    const likesCount = await this._getLikesCount_pg(postId);
-    const dislikesCount = await this._getDislikesCount_pg(postId);
-    const lastThreeLikes = await this._getLastThreeLikes_pg(postId);
-    const userLikeStatus = await this._getUserLikeStatus_pg({ postId, userId });
-
-    return PostViewDtoPg.mapToView({
-      post,
-      likesCount,
-      dislikesCount,
-      newestLikes: lastThreeLikes,
-      myStatus: userLikeStatus,
+    const post = this.postEntity.create({
+      title: dto.title,
+      shortDescription: dto.shortDescription,
+      content: dto.content,
+      blogId: dto.blogId,
     });
+
+    await this.postsRepository.save_post_typeorm(post);
+
+    return post.id;
   }
+
+  // async getPostById_pg(dto: GetPostByIdDto): Promise<PostViewDtoPg> {
+  //   const { postId, userId } = dto;
+  //
+  //   const post =
+  //     await this.postsRepository.getByIdOrNotFoundFail_typeorm(postId);
+  //
+  //   const likesCount = await this._getLikesCount_pg(postId);
+  //   const dislikesCount = await this._getDislikesCount_pg(postId);
+  //   const lastThreeLikes = await this._getLastThreeLikes_pg(postId);
+  //   const userLikeStatus = await this._getUserLikeStatus_pg({ postId, userId });
+  //
+  //   return PostViewDtoPg.mapToView({
+  //     post,
+  //     likesCount,
+  //     dislikesCount,
+  //     newestLikes: lastThreeLikes,
+  //     myStatus: userLikeStatus,
+  //   });
+  // }
 
   async getPostsLikeInfo_pg(dto: {
     posts: PostViewDtoPg[];
@@ -71,49 +91,35 @@ export class PostsService {
     return updatedPosts;
   }
 
-  async createPost_pg(dto: CreatePostDto): Promise<string> {
-    await this.blogsRepository.findByIdOrNotFoundFail_pg(dto.blogId);
-
-    const post = this.postEntity.createInstance({
-      title: dto.title,
-      shortDescription: dto.shortDescription,
-      content: dto.content,
-      blogId: dto.blogId,
-    });
-
-    await this.postsRepository.createPost_pg(post);
-
-    return post.id;
-  }
-
-  async updatePost_pg({
+  async updatePost_typeorm({
     id,
     dto,
   }: {
     id: string;
     dto: UpdatePostInputDto;
   }): Promise<void> {
-    await this.blogsRepository.findByIdOrNotFoundFail_pg(dto.blogId);
+    const { title, shortDescription, content, blogId } = dto;
 
-    const post = await this.postsRepository.getByIdOrNotFoundFail_pg(id);
+    await this.blogsRepository.findByIdOrNotFoundFail_typeorm(dto.blogId);
 
-    const updatedPost = this.postEntity.update({
-      post,
-      newValues: dto,
-    });
+    const post = await this.postsRepository.getByIdOrNotFoundFail_typeorm(id);
 
-    await this.postsRepository.updatePost_pg(updatedPost);
+    post.title = title;
+    post.shortDescription = shortDescription;
+    post.content = content;
+    post.blogId = blogId;
+
+    await this.postsRepository.save_post_typeorm(post);
   }
 
-  async deletePost_pg(dto: { postId: string; blogId: string }) {
-    await this.blogsRepository.findByIdOrNotFoundFail_pg(dto.blogId);
+  async deletePost_typeorm(dto: { postId: string; blogId: string }) {
+    await this.blogsRepository.findByIdOrNotFoundFail_typeorm(dto.blogId);
 
-    const post = await this.postsRepository.getByIdOrNotFoundFail_pg(
+    const post = await this.postsRepository.getByIdOrNotFoundFail_typeorm(
       dto.postId,
     );
 
-    const deletedAt = new Date(Date.now()).toISOString();
-    await this.postsRepository.deletePost_pg({ postId: post.id, deletedAt });
+    await this.postsRepository.deletePost_typeorm(post.id);
   }
 
   async updatePostLikeStatus_pg(dto: {
@@ -123,7 +129,7 @@ export class PostsService {
   }): Promise<void> {
     const { userId, postId, newLikeStatus } = dto;
 
-    await this.postsRepository.getByIdOrNotFoundFail_pg(postId);
+    await this.postsRepository.getByIdOrNotFoundFail_typeorm(postId);
 
     const postLike = await this.postsRepository.findPostLike_pg({
       postId,

@@ -42,86 +42,87 @@ export class BlogsAdminController {
     private postsQueryRepository: PostsQueryRepository,
   ) {}
 
-  // @Get()
-  // async getAllBlogs(
-  //   @Query() query: GetBlogsQueryParams,
-  // ): Promise<PaginatedViewDto<BlogViewDtoPg[]>> {
-  //   return this.blogsQueryRepository.getAll_pg(query);
-  // }
+  @Get()
+  async getAllBlogs(
+    @Query() query: GetBlogsQueryParams,
+  ): Promise<PaginatedViewDto<BlogViewDtoPg[]>> {
+    return this.blogsQueryRepository.getAll_typeorm(query);
+  }
 
-  // @Post()
-  // async createBlog(@Body() body: CreateBlogInputDto): Promise<BlogViewDtoPg> {
-  //   const blogId = await this.blogsService.createBlog(body);
-  //
-  //   return this.blogsQueryRepository.getByIdOrNotFoundFail_pg(blogId);
-  // }
+  @Post()
+  async createBlog(@Body() body: CreateBlogInputDto): Promise<BlogViewDtoPg> {
+    const blogId = await this.blogsService.createBlog_typeorm(body);
 
-  // @Put(":id")
-  // @HttpCode(HttpStatus.NO_CONTENT)
-  // async updateBlog(
-  //   @Param("id") id: string,
-  //   @Body() body: UpdateBlogInputDto,
-  // ): Promise<void> {
-  //   return this.blogsService.updateBlog({ id, dto: body });
-  // }
+    return this.blogsQueryRepository.getByIdOrNotFoundFail_typeorm(blogId);
+  }
 
-  // @ApiParam({ name: "id" })
-  // @Delete(":id")
-  // @HttpCode(HttpStatus.NO_CONTENT)
-  // async deleteBlog(@Param("id") id: string): Promise<void> {
-  //   return this.blogsService.deleteBlog(id);
-  // }
+  @Put(":id")
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async updateBlog(
+    @Param("id") id: string,
+    @Body() body: UpdateBlogInputDto,
+  ): Promise<void> {
+    return this.blogsService.updateBlog_typeorm({ id, dto: body });
+  }
 
-  // @Post(":id/posts")
-  // async createPostsByBlogId(
-  //   @Param("id") id: string,
-  //   @Body() body: CreatePostByBlogIdInputDto,
-  // ): Promise<PostViewDtoPg> {
-  //   await this.blogsQueryRepository.getByIdOrNotFoundFail_pg(id);
-  //
-  //   const postId = await this.postsService.createPost_pg({ ...body, blogId: id });
-  //
-  //   return this.postsQueryRepository.getByIdOrNotFoundFail_pg(postId);
-  // }
+  @ApiParam({ name: "id" })
+  @Delete(":id")
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async deleteBlog(@Param("id") id: string): Promise<void> {
+    return this.blogsService.deleteBlog(id);
+  }
 
-  // @Get(":id/posts")
-  // async getPostsByBlogId(
-  //   @Query() query: GetPostsQueryParams,
-  //   @Param("id") id: string,
-  // ): Promise<PaginatedViewDto<PostViewDtoPg[]>> {
-  //   await this.blogsQueryRepository.getByIdOrNotFoundFail_pg(id);
-  //
-  //   return this.postsQueryRepository.getAll_pg({
-  //     requestParams: query,
-  //     blogId: id,
-  //   });
-  // }
+  @Post(":id/posts")
+  async createPostsByBlogId(
+    @Param("id") id: string,
+    @Body() body: CreatePostByBlogIdInputDto,
+  ): Promise<PostViewDtoPg> {
+    const postId = await this.postsService.createPost_typeorm({
+      ...body,
+      blogId: id,
+    });
 
-  // @Put(":blogId/posts/:postId")
-  // @HttpCode(HttpStatus.NO_CONTENT)
-  // async updatePostByBlogId(
-  //   @Param("blogId") blogId: string,
-  //   @Param("postId") postId: string,
-  //   @Body() body: UpdatePostByBlogInputDto,
-  // ): Promise<void> {
-  //   return this.postsService.updatePost_pg({
-  //     id: postId,
-  //     dto: {
-  //       ...body,
-  //       blogId,
-  //     },
-  //   });
-  // }
+    return this.postsQueryRepository.getByIdOrNotFoundFail_typeorm(postId);
+  }
 
-  // @Delete(":blogId/posts/:postId")
-  // @HttpCode(HttpStatus.NO_CONTENT)
-  // async deletePostByBlogId(
-  //   @Param("blogId") blogId: string,
-  //   @Param("postId") postId: string,
-  // ): Promise<void> {
-  //   return this.postsService.deletePost_pg({
-  //     postId,
-  //     blogId,
-  //   });
-  // }
+  @Get(":id/posts")
+  async getPostsByBlogId(
+    @Query() query: GetPostsQueryParams,
+    @Param("id") id: string,
+  ): Promise<PaginatedViewDto<PostViewDtoPg[]>> {
+    await this.blogsQueryRepository.getByIdOrNotFoundFail_typeorm(id);
+
+    return this.postsQueryRepository.getAll_typeorm({
+      requestParams: query,
+      blogId: id,
+    });
+  }
+
+  @Put(":blogId/posts/:postId")
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async updatePostByBlogId(
+    @Param("blogId") blogId: string,
+    @Param("postId") postId: string,
+    @Body() body: UpdatePostByBlogInputDto,
+  ): Promise<void> {
+    return this.postsService.updatePost_typeorm({
+      id: postId,
+      dto: {
+        ...body,
+        blogId,
+      },
+    });
+  }
+
+  @Delete(":blogId/posts/:postId")
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async deletePostByBlogId(
+    @Param("blogId") blogId: string,
+    @Param("postId") postId: string,
+  ): Promise<void> {
+    return this.postsService.deletePost_typeorm({
+      postId,
+      blogId,
+    });
+  }
 }

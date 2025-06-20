@@ -1,10 +1,9 @@
-import { DataSource } from "typeorm";
+import { Repository } from "typeorm";
 import { Injectable } from "@nestjs/common";
 import { validate as isValidUUID } from "uuid";
-import { InjectDataSource } from "@nestjs/typeorm";
+import { InjectRepository } from "@nestjs/typeorm";
 
-import { SETTINGS } from "../../../../../settings";
-import { BlogEntityType } from "../../domain/blog.entity.pg";
+import { Blog } from "../../entity/blog.entity.typeorm";
 import { BlogViewDtoPg } from "../../api/view-dto/blogs.view-dto.pg";
 import { PaginatedViewDto } from "../../../../../core/dto/base.paginated.view-dto";
 import { DomainException } from "../../../../../core/exceptions/domain-exceptions";
@@ -13,9 +12,9 @@ import { DomainExceptionCode } from "../../../../../core/exceptions/domain-excep
 
 @Injectable()
 export class BlogsQueryRepository {
-  constructor(@InjectDataSource() private dataSource: DataSource) {}
+  constructor(@InjectRepository(Blog) private blogEntity: Repository<Blog>) {}
 
-  async getByIdOrNotFoundFail_pg(blogId: string): Promise<BlogViewDtoPg> {
+  async getByIdOrNotFoundFail_typeorm(blogId: string): Promise<BlogViewDtoPg> {
     if (!isValidUUID(blogId)) {
       throw new DomainException({
         code: DomainExceptionCode.NotFound,
@@ -29,15 +28,13 @@ export class BlogsQueryRepository {
       });
     }
 
-    let blog: BlogEntityType;
-
-    const query = `
-       SELECT * FROM ${SETTINGS.TABLES.BLOGS} WHERE "id" = $1 AND "deletedAt" IS NULL
-    `;
+    let blog: Blog | null;
 
     try {
-      const result = await this.dataSource.query(query, [blogId]);
-      blog = result?.[0];
+      blog = await this.blogEntity
+        .createQueryBuilder("b")
+        .where("b.id = :blogId", { blogId })
+        .getOne();
     } catch (e) {
       console.log(e);
       throw new DomainException({
@@ -67,42 +64,45 @@ export class BlogsQueryRepository {
     return BlogViewDtoPg.mapToView(blog);
   }
 
-  async getAll_pg(
+  async getAll_typeorm(
     requestParams: GetBlogsQueryParams,
   ): Promise<PaginatedViewDto<BlogViewDtoPg[]>> {
-    const queryParams: string[] = [];
-
-    let dataQuery = `
-       SELECT * FROM ${SETTINGS.TABLES.BLOGS} WHERE "deletedAt" IS NULL
-    `;
-    let countQuery = `
-       SELECT count(*) FROM ${SETTINGS.TABLES.BLOGS} WHERE "deletedAt" IS NULL
-    `;
+    const query = this.blogEntity.createQueryBuilder();
 
     if (requestParams.searchNameTerm) {
-      const additionalPart = `AND "name" ilike $${queryParams.length + 1}`;
-
-      dataQuery = `${dataQuery} ${additionalPart}`;
-      countQuery = `${countQuery} ${additionalPart}`;
-
-      queryParams.push(`%${requestParams.searchNameTerm}%`);
+      query.andWhere("name ilike :name", {
+        name: `%${requestParams.searchNameTerm}%`,
+      });
     }
 
-    dataQuery = `${dataQuery} ORDER BY "${requestParams.sortBy}" ${requestParams.sortDirection} LIMIT ${requestParams.pageSize} OFFSET ${requestParams.calculateSkip()}`;
+    try {
+      const totalCount = await query.getCount();
+      const blogs = await query
+        .orderBy(`"${requestParams.sortBy}"`, `${requestParams.sortDirection}`)
+        .take(requestParams.pageSize)
+        .skip(requestParams.calculateSkip())
+        .getMany();
 
-    const blogs = await this.dataSource.query(dataQuery, [...queryParams]);
+      const items = blogs.map(BlogViewDtoPg.mapToView);
 
-    const totalCountRes = await this.dataSource.query(countQuery, [
-      ...queryParams,
-    ]);
-
-    const items = blogs.map(BlogViewDtoPg.mapToView);
-
-    return PaginatedViewDto.mapToView({
-      items,
-      totalCount: Number(totalCountRes?.[0]?.count),
-      page: requestParams.pageNumber,
-      size: requestParams.pageSize,
-    });
+      return PaginatedViewDto.mapToView({
+        items,
+        totalCount,
+        page: requestParams.pageNumber,
+        size: requestParams.pageSize,
+      });
+    } catch (e) {
+      console.log(e);
+      throw new DomainException({
+        code: DomainExceptionCode.NotFound,
+        message: "Failed to get all blogs",
+        extensions: [
+          {
+            field: "",
+            message: "Failed to get all blogs",
+          },
+        ],
+      });
+    }
   }
 }

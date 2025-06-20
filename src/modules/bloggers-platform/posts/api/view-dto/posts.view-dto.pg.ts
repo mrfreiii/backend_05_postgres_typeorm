@@ -1,9 +1,14 @@
 import { LikeStatusEnum } from "../../../enums/likes.enum";
-import { PostEntityType } from "../../domain/post.entity.pg";
 import { NewestLikesPg } from "../../../types/likes.types";
+import { Post } from "../../entity/post.entity.typeorm";
+import { PostEntityType } from "../../domain/post.entity.pg";
 
-class PostViewDtoPgInputType {
-  post: PostEntityType;
+export type PostQueryRepoType = Post & {
+  blogName: string;
+};
+
+export class PostViewDtoPgInputType {
+  post: PostQueryRepoType | PostEntityType; //удалить PostEntityType после миграции на typeorm
   likesCount?: number;
   dislikesCount?: number;
   myStatus?: LikeStatusEnum;
