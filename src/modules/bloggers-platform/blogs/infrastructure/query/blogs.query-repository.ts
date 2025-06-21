@@ -79,8 +79,10 @@ export class BlogsQueryRepository {
       const totalCount = await query.getCount();
       const blogs = await query
         .orderBy(`"${requestParams.sortBy}"`, `${requestParams.sortDirection}`)
-        .take(requestParams.pageSize)
-        .skip(requestParams.calculateSkip())
+        // .take(requestParams.pageSize)
+        // .skip(requestParams.calculateSkip())
+        .limit(requestParams.pageSize)
+        .offset(requestParams.calculateSkip())
         .getMany();
 
       const items = blogs.map(BlogViewDtoPg.mapToView);

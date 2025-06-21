@@ -161,8 +161,10 @@ export class PostsQueryRepository {
       const totalCount = await query.getCount();
       const posts = await query
         .orderBy(`"${requestParams.sortBy}"`, `${requestParams.sortDirection}`)
-        .take(requestParams.pageSize)
-        .skip(requestParams.calculateSkip())
+        // .take(requestParams.pageSize)
+        // .skip(requestParams.calculateSkip())
+        .limit(requestParams.pageSize)
+        .offset(requestParams.calculateSkip())
         .getRawMany();
 
       const items = posts.map((p) => PostViewDtoPg.mapToView({ post: p }));
