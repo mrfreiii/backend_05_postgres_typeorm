@@ -1,96 +1,91 @@
-// import { SETTINGS } from "../../settings";
-// import { createTestPostsByBlog } from "../blogs/helpers";
-// import { createTestComments } from "../comments/helpers";
-// import { connectToTestDBAndClearRepositories, req } from "../helpers";
-// import { createTestUsers, getUsersJwtTokens } from "../users/helpers";
-// import { UserViewDtoPg } from "../../modules/user-accounts/users/api/view-dto/users.view-dto.pg";
-// import { PostViewDtoPg } from "../../modules/bloggers-platform/posts/api/view-dto/posts.view-dto.pg";
-// import { CreateCommentByPostIdInputDto } from "../../modules/bloggers-platform/posts/api/input-dto/posts.input-dto";
-// import { CommentViewDtoPg } from "../../modules/bloggers-platform/comments/api/view-dto/comments.view-dto.pg";
-//
-describe("mock posts", () => {
-  it("mock posts", () => {
-    expect(true).toBe(true);
+import { SETTINGS } from "../../settings";
+import { createTestPostsByBlog } from "../blogs/helpers";
+import { createTestComments } from "../comments/helpers";
+import { connectToTestDBAndClearRepositories, req } from "../helpers";
+import { createTestUsers, getUsersJwtTokens } from "../users/helpers";
+import { UserViewDtoPg } from "../../modules/user-accounts/users/api/view-dto/users.view-dto.pg";
+import { PostViewDtoPg } from "../../modules/bloggers-platform/posts/api/view-dto/posts.view-dto.pg";
+import { CommentViewDtoPg } from "../../modules/bloggers-platform/comments/api/view-dto/comments.view-dto.pg";
+import { CreateCommentByPostIdInputDto } from "../../modules/bloggers-platform/posts/api/input-dto/posts.input-dto";
+
+describe("get all /posts", () => {
+  connectToTestDBAndClearRepositories();
+
+  let createdPost: PostViewDtoPg;
+
+  it("should get empty array", async () => {
+    const res = await req.get(SETTINGS.PATH.POSTS).expect(200);
+
+    expect(res.body.items.length).toBe(0);
+  });
+
+  it("should get not empty array", async () => {
+    createdPost = (await createTestPostsByBlog())[0];
+
+    const res = await req.get(SETTINGS.PATH.POSTS).expect(200);
+
+    expect(res.body.items.length).toBe(1);
+    expect(res.body.items[0]).toEqual(createdPost);
+  });
+
+  // TODO: вернуть когда сделаю лайки
+  // it("should return post with like-status", async () => {
+  //   const user = (await createTestUsers({}))[0];
+  //   const userToken = (await getUsersJwtTokens([user]))[0];
+  //
+  //   await req
+  //     .put(`${SETTINGS.PATH.POSTS}/${createdPost?.id}/like-status`)
+  //     .set("Authorization", `Bearer ${userToken}`)
+  //     .send({ likeStatus: "Like" })
+  //     .expect(204);
+  //
+  //   const res = await req
+  //     .get(SETTINGS.PATH.POSTS)
+  //     .set("Authorization", `Bearer ${userToken}`)
+  //     .expect(200);
+  //
+  //   expect(res.body.items.length).toBe(1);
+  //   expect(res.body.items[0]).toEqual({
+  //     ...createdPost,
+  //     extendedLikesInfo: {
+  //       likesCount: 1,
+  //       dislikesCount: 0,
+  //       myStatus: "Like",
+  //       newestLikes: [
+  //         {
+  //           addedAt: expect.any(String),
+  //           login: user?.login,
+  //           userId: user?.id,
+  //         },
+  //       ],
+  //     },
+  //   });
+  // });
+});
+
+describe("get post by id /posts/:id", () => {
+  connectToTestDBAndClearRepositories();
+
+  it("should return 404 for non existent post", async () => {
+    const res = await req.get(`${SETTINGS.PATH.POSTS}/77777`).expect(404);
+
+    expect(res.body.errorsMessages[0]).toEqual({
+      field: "",
+      message: "Post not found",
+    });
+  });
+
+  it("should get not empty array", async () => {
+    const createdPost = (await createTestPostsByBlog())[0];
+
+    const res = await req
+      .get(`${SETTINGS.PATH.POSTS}/${createdPost?.id}`)
+      .expect(200);
+
+    expect(res.body).toEqual(createdPost);
   });
 });
-//
-// describe("get all /posts", () => {
-//   connectToTestDBAndClearRepositories();
-//
-//   let createdPost: PostViewDtoPg;
-//
-//   it("should get empty array", async () => {
-//     const res = await req.get(SETTINGS.PATH.POSTS).expect(200);
-//
-//     expect(res.body.items.length).toBe(0);
-//   });
-//
-//   it("should get not empty array", async () => {
-//     createdPost = (await createTestPostsByBlog())[0];
-//
-//     const res = await req.get(SETTINGS.PATH.POSTS).expect(200);
-//
-//     expect(res.body.items.length).toBe(1);
-//     expect(res.body.items[0]).toEqual(createdPost);
-//   });
-//
-//   it("should return post with like-status", async () => {
-//     const user = (await createTestUsers({}))[0];
-//     const userToken = (await getUsersJwtTokens([user]))[0];
-//
-//     await req
-//       .put(`${SETTINGS.PATH.POSTS}/${createdPost?.id}/like-status`)
-//       .set("Authorization", `Bearer ${userToken}`)
-//       .send({ likeStatus: "Like" })
-//       .expect(204);
-//
-//     const res = await req
-//       .get(SETTINGS.PATH.POSTS)
-//       .set("Authorization", `Bearer ${userToken}`)
-//       .expect(200);
-//
-//     expect(res.body.items.length).toBe(1);
-//     expect(res.body.items[0]).toEqual({
-//       ...createdPost,
-//       extendedLikesInfo: {
-//         likesCount: 1,
-//         dislikesCount: 0,
-//         myStatus: "Like",
-//         newestLikes: [
-//           {
-//             addedAt: expect.any(String),
-//             login: user?.login,
-//             userId: user?.id,
-//           },
-//         ],
-//       },
-//     });
-//   });
-// });
-//
-// describe("get post by id /posts/:id", () => {
-//   connectToTestDBAndClearRepositories();
-//
-//   it("should return 404 for non existent post", async () => {
-//     const res = await req.get(`${SETTINGS.PATH.POSTS}/77777`).expect(404);
-//
-//     expect(res.body.errorsMessages[0]).toEqual({
-//       field: "",
-//       message: "Post not found",
-//     });
-//   });
-//
-//   it("should get not empty array", async () => {
-//     const createdPost = (await createTestPostsByBlog())[0];
-//
-//     const res = await req
-//       .get(`${SETTINGS.PATH.POSTS}/${createdPost?.id}`)
-//       .expect(200);
-//
-//     expect(res.body).toEqual(createdPost);
-//   });
-// });
-//
+
 // describe("create comment by post id /posts/:id/comments", () => {
 //   connectToTestDBAndClearRepositories();
 //

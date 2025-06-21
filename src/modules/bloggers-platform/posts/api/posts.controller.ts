@@ -39,40 +39,41 @@ export class PostsController {
     private commentsService: CommentsService,
   ) {}
 
-  // @ApiBearerAuth()
-  // @UseGuards(JwtOptionalAuthGuard)
-  // @Get()
-  // async getAllPosts(
-  //   @Query() query: GetPostsQueryParams,
-  //   @ExtractUserIfExistsFromRequest() user: UserContextDto | null,
-  // ): Promise<PaginatedViewDto<PostViewDtoPg[]>> {
-  //   const paginatedPosts = await this.postsQueryRepository.getAll_pg({
-  //     requestParams: query,
-  //   });
-  //
-  //   const postsWithLikesInfo = await this.postsService.getPostsLikeInfo_pg({
-  //     posts: paginatedPosts.items,
-  //     userId: user?.id || null,
-  //   });
-  //
-  //   return {
-  //     ...paginatedPosts,
-  //     items: postsWithLikesInfo,
-  //   };
-  // }
+  @ApiBearerAuth()
+  @UseGuards(JwtOptionalAuthGuard)
+  @Get()
+  async getAllPosts(
+    @Query() query: GetPostsQueryParams,
+    // @ExtractUserIfExistsFromRequest() user: UserContextDto | null,
+  ): Promise<PaginatedViewDto<PostViewDtoPg[]>> {
+    const paginatedPosts = await this.postsQueryRepository.getAll_typeorm({
+      requestParams: query,
+    });
 
-  // @ApiBearerAuth()
-  // @UseGuards(JwtOptionalAuthGuard)
-  // @Get(":postId")
-  // async getPostById(
-  //   @Param("postId") postId: string,
-  //   @ExtractUserIfExistsFromRequest() user: UserContextDto | null,
-  // ): Promise<PostViewDtoPg> {
-  //   return this.postsService.getPostById_pg({
-  //     postId,
-  //     userId: user?.id || null,
-  //   });
-  // }
+    // const postsWithLikesInfo = await this.postsService.getPostsLikeInfo_pg({
+    //   posts: paginatedPosts.items,
+    //   userId: user?.id || null,
+    // });
+
+    return {
+      ...paginatedPosts,
+      // items: postsWithLikesInfo,
+    };
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtOptionalAuthGuard)
+  @Get(":postId")
+  async getPostById(
+    @Param("postId") postId: string,
+    // @ExtractUserIfExistsFromRequest() user: UserContextDto | null,
+  ): Promise<PostViewDtoPg> {
+    // return this.postsService.getPostById_pg({
+    //   postId,
+    //   userId: user?.id || null,
+    // });
+    return this.postsQueryRepository.getByIdOrNotFoundFail_typeorm(postId);
+  }
 
   // @UseGuards(JwtAuthGuard)
   // @ApiBearerAuth()
