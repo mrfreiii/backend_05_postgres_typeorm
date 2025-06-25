@@ -33,7 +33,7 @@ import { DomainHttpExceptionsFilter } from "./core/exceptions/filters/domain-exc
           password,
           database,
           autoLoadEntities: true,
-          synchronize: true,
+          synchronize: false,
           ssl: true,
         };
       },

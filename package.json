@@ -17,7 +17,13 @@
     "test:watch": "cross-env NODE_ENV=testing jest --watch",
     "test:cov": "cross-env NODE_ENV=testing jest --coverage",
     "test:debug": "cross-env NODE_ENV=testing node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "test:e2e": "cross-env NODE_ENV=testing jest --config jest.config.ts --detectOpenHandles"
+    "test:e2e": "cross-env NODE_ENV=testing jest --config jest.config.ts --detectOpenHandles",
+    "add-empty-migration": "cross-env NODE_ENV=development typeorm-ts-node-commonjs migration:create ./migrations/empty",
+    "generate-migration": "cross-env NODE_ENV=development yarn apply-migrations && cross-env NODE_ENV=development typeorm-ts-node-commonjs migration:generate -d ./migrations-data-source.ts",
+    "apply-migrations": "typeorm-ts-node-commonjs migration:run -d ./migrations-data-source.ts",
+    "revert-migration": "typeorm-ts-node-commonjs migration:revert -d ./migrations-data-source.ts",
+    "apply-migrations:dev": "cross-env NODE_ENV=development yarn apply-migrations",
+    "revert-migration:dev": "cross-env NODE_ENV=development yarn revert-migration"
   },
   "dependencies": {
     "@nestjs-modules/mailer": "^2.0.2",
