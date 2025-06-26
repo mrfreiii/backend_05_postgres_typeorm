@@ -47,7 +47,11 @@ export class TestingController {
       .map((table: { table_name: string }) => table.table_name)
       .filter((name: string) => !skipTables.includes(name))
       .map((name: string) => {
-        const query = `TRUNCATE TABLE "${name}" RESTART IDENTITY CASCADE`;
+        const query = `
+          SET FOREIGN_KEY_CHECKS = 0; 
+          TRUNCATE TABLE "${name}" RESTART IDENTITY CASCADE;
+          SET FOREIGN_KEY_CHECKS = 1;
+        `;
 
         return this.dataSource.query(query);
       });
