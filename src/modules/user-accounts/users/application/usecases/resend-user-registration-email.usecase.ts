@@ -5,7 +5,6 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { CommandHandler, ICommandHandler } from "@nestjs/cqrs";
 
 import { UsersRepository } from "../../infrastructure/users.repository";
-import { RegistrationEntity } from "../../domain/registration.entity.pg";
 import { UserRegistration } from "../../entity/registation.entity.typeorm";
 import { EmailService } from "../../../../notifications/application/email.service";
 import { DomainException } from "../../../../../core/exceptions/domain-exceptions";
@@ -27,7 +26,6 @@ export class ResendUserRegistrationEmailCommandHandler
   constructor(
     private usersRepository: UsersRepository,
     private emailService: EmailService,
-    private registrationEntity: RegistrationEntity,
     @InjectRepository(UserRegistration)
     private userRegistrationEntity: Repository<UserRegistration>,
   ) {}

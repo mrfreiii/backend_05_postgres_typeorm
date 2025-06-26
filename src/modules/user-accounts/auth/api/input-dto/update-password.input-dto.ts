@@ -1,7 +1,7 @@
 import { IsString, Length } from "class-validator";
 
 import { Trim } from "../../../../../core/decorators/transform/trim";
-import { passwordConstraints } from "../../../users/domain/user.entity.pg";
+import { passwordConstraints } from "../../../users/entity/user.entity.typeorm";
 
 export class UpdatePasswordInputDto {
   @IsString()
