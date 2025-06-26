@@ -1,79 +1,81 @@
-import { DataSource, Repository } from "typeorm";
 import { Injectable } from "@nestjs/common";
 import { validate as isValidUUID } from "uuid";
-import { InjectDataSource, InjectRepository } from "@nestjs/typeorm";
+import { InjectRepository } from "@nestjs/typeorm";
+import { Repository, SelectQueryBuilder } from "typeorm";
 
-import { SETTINGS } from "../../../../../settings";
-import { PostEntityType } from "../../domain/post.entity.pg";
 import {
   PostQueryRepoType,
-  PostViewDtoPg,
-  PostViewDtoPgInputType,
+  PostViewDtoTypeorm,
 } from "../../api/view-dto/posts.view-dto.pg";
+import { Post } from "../../entity/post.entity.typeorm";
+import { LikeStatusEnum } from "../../../enums/likes.enum";
+import { PostLike } from "../../entity/postLike.entity.typeorm";
 import { PaginatedViewDto } from "../../../../../core/dto/base.paginated.view-dto";
 import { DomainException } from "../../../../../core/exceptions/domain-exceptions";
 import { GetPostsQueryParams } from "../../api/input-dto/get-posts-query-params.input-dto";
 import { DomainExceptionCode } from "../../../../../core/exceptions/domain-exception-codes";
-import { Post } from "../../entity/post.entity.typeorm";
 
 @Injectable()
 export class PostsQueryRepository {
   constructor(
-    @InjectDataSource() private dataSource: DataSource,
     @InjectRepository(Post) private postEntity: Repository<PostQueryRepoType>,
   ) {}
 
-  // async getByIdOrNotFoundFail_typeorm(postId: string): Promise<PostViewDtoPg> {
-  //   if (!isValidUUID(postId)) {
-  //     throw new DomainException({
-  //       code: DomainExceptionCode.NotFound,
-  //       message: "Post not found",
-  //       extensions: [
-  //         {
-  //           field: "",
-  //           message: "Post not found",
-  //         },
-  //       ],
-  //     });
-  //   }
-  //
-  //   let post: Post | null;
-  //
-  //   try {
-  //     post = await this.postEntity
-  //         .createQueryBuilder("p")
-  //         .where("p.id = :postId", { postId })
-  //         .getOne();
-  //   } catch (e) {
-  //     console.log(e);
-  //     throw new DomainException({
-  //       code: DomainExceptionCode.InternalServerError,
-  //       message: "Failed to get post from db",
-  //       extensions: [
-  //         {
-  //           field: "",
-  //           message: "Failed to get post from db",
-  //         },
-  //       ],
-  //     });
-  //   }
-  //
-  //   if (!post) {
-  //     throw new DomainException({
-  //       code: DomainExceptionCode.NotFound,
-  //       message: "Post not found",
-  //       extensions: [
-  //         {
-  //           field: "",
-  //           message: "Post not found",
-  //         },
-  //       ],
-  //     });
-  //   }
-  //   return PostViewDtoPg.mapToView({ post });
-  // }
+  async checkIfExist_typeorm(postId: string): Promise<void> {
+    if (!isValidUUID(postId)) {
+      throw new DomainException({
+        code: DomainExceptionCode.NotFound,
+        message: "Post not found",
+        extensions: [
+          {
+            field: "",
+            message: "Post not found",
+          },
+        ],
+      });
+    }
 
-  async getByIdOrNotFoundFail_typeorm(postId: string): Promise<PostViewDtoPg> {
+    let post: Post | null;
+
+    try {
+      post = await this.postEntity.findOne({
+        where: { id: postId },
+        select: { title: true },
+      });
+    } catch (e) {
+      console.log(e);
+      throw new DomainException({
+        code: DomainExceptionCode.InternalServerError,
+        message: "Failed to get post from db",
+        extensions: [
+          {
+            field: "",
+            message: "Failed to get post from db",
+          },
+        ],
+      });
+    }
+
+    if (!post) {
+      throw new DomainException({
+        code: DomainExceptionCode.NotFound,
+        message: "Post not found",
+        extensions: [
+          {
+            field: "",
+            message: "Post not found",
+          },
+        ],
+      });
+    }
+  }
+
+  async getByIdOrNotFoundFail_typeorm(dto: {
+    postId: string;
+    userId?: string;
+  }): Promise<PostViewDtoTypeorm> {
+    const { postId, userId } = dto;
+
     if (!isValidUUID(postId)) {
       throw new DomainException({
         code: DomainExceptionCode.NotFound,
@@ -90,18 +92,7 @@ export class PostsQueryRepository {
     let post: PostQueryRepoType | null | undefined;
 
     try {
-      post = await this.postEntity
-        .createQueryBuilder("p")
-        .leftJoinAndSelect("p.blog", "b")
-        .select([
-          'p.id as "id"',
-          'p.title as "title"',
-          'p.shortDescription as "shortDescription"',
-          'p.content as "content"',
-          'p.blogId as "blogId"',
-          'p.createdAt as "createdAt"',
-          'b.name as "blogName"',
-        ])
+      post = await this._getPostQueryBuilder(userId)
         .where("p.id = :postId", { postId })
         .getRawOne();
     } catch (e) {
@@ -130,28 +121,20 @@ export class PostsQueryRepository {
         ],
       });
     }
-    return PostViewDtoPg.mapToView({ post });
+
+    return PostViewDtoTypeorm.mapToView(post);
   }
 
   async getAll_typeorm({
     requestParams,
     blogId,
+    userId,
   }: {
     requestParams: GetPostsQueryParams;
     blogId?: string;
-  }): Promise<PaginatedViewDto<PostViewDtoPg[]>> {
-    const query = this.postEntity
-      .createQueryBuilder("p")
-      .leftJoinAndSelect("p.blog", "b")
-      .select([
-        'p.id as "id"',
-        'p.title as "title"',
-        'p.shortDescription as "shortDescription"',
-        'p.content as "content"',
-        'p.blogId as "blogId"',
-        'p.createdAt as "createdAt"',
-        'b.name as "blogName"',
-      ]);
+    userId?: string;
+  }): Promise<PaginatedViewDto<PostViewDtoTypeorm[]>> {
+    const query = this._getPostQueryBuilder(userId);
 
     if (blogId) {
       query.andWhere("p.blogId = :blogId", { blogId });
@@ -164,13 +147,11 @@ export class PostsQueryRepository {
           `"${requestParams.sortBy}"`,
           `${requestParams.convertSortDirection(requestParams.sortDirection)}`,
         )
-        // .take(requestParams.pageSize)
-        // .skip(requestParams.calculateSkip())
         .limit(requestParams.pageSize)
         .offset(requestParams.calculateSkip())
         .getRawMany();
 
-      const items = posts.map((p) => PostViewDtoPg.mapToView({ post: p }));
+      const items = posts.map((p) => PostViewDtoTypeorm.mapToView(p));
 
       return PaginatedViewDto.mapToView({
         items,
@@ -191,5 +172,87 @@ export class PostsQueryRepository {
         ],
       });
     }
+  }
+
+  private _getPostQueryBuilder(
+    userId?: string,
+  ): SelectQueryBuilder<PostQueryRepoType> {
+    return this.postEntity
+      .createQueryBuilder("p")
+      .leftJoin("p.blog", "b")
+      .select([
+        'p.id as "id"',
+        'p.title as "title"',
+        'p.shortDescription as "shortDescription"',
+        'p.content as "content"',
+        'p.blogId as "blogId"',
+        'p.createdAt as "createdAt"',
+        'b.name as "blogName"',
+      ])
+      .addSelect(
+        (sb) =>
+          sb
+            .select("COUNT(*)")
+            .from("PostLike", "pl")
+            .leftJoin("pl.likeStatus", "ls")
+            .where("pl.postId = p.id and ls.status = :likeStatus", {
+              likeStatus: LikeStatusEnum.Like,
+            }),
+        "likesCount",
+      )
+      .addSelect(
+        (sb) =>
+          sb
+            .select("COUNT(*)")
+            .from("PostLike", "pl")
+            .leftJoin("pl.likeStatus", "ls")
+            .where("pl.postId = p.id and ls.status = :dislikeStatus", {
+              dislikeStatus: LikeStatusEnum.Dislike,
+            }),
+        "dislikesCount",
+      )
+      .addSelect(
+        (sb) =>
+          sb
+            .select("ls.status")
+            .from("PostLike", "pl")
+            .leftJoin("pl.likeStatus", "ls")
+            .where("pl.postId = p.id and pl.userId = :userId", {
+              userId,
+            }),
+        "myStatus",
+      )
+      .addSelect(
+        (sb) =>
+          sb
+            .select(
+              `jsonb_agg(
+                            json_build_object(
+                                'addedAt', aggregated_pl."addedAt", 
+                                'userId', aggregated_pl."userId", 
+                                'login', aggregated_pl."login"
+                            )
+                         )`,
+            )
+            .from(
+              (sb) =>
+                sb
+                  .select([
+                    'pl.updatedAt as "addedAt"',
+                    'pl.userId as "userId"',
+                    'u.login as "login"',
+                  ])
+                  .from(PostLike, "pl")
+                  .leftJoin("pl.likeStatus", "ls")
+                  .leftJoin("pl.user", "u")
+                  .where("pl.postId = p.id and ls.status = :status", {
+                    status: LikeStatusEnum.Like,
+                  })
+                  .orderBy('pl."updatedAt"', "DESC")
+                  .limit(3),
+              "aggregated_pl",
+            ),
+        "newestLikes",
+      );
   }
 }

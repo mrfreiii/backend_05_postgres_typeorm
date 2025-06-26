@@ -1,16 +1,15 @@
+import { Repository } from "typeorm";
 import { Injectable } from "@nestjs/common";
-import { DataSource, Repository } from "typeorm";
-import { InjectDataSource, InjectRepository } from "@nestjs/typeorm";
+import { InjectRepository } from "@nestjs/typeorm";
 
 import { Session } from "../../entity/session.entity.typeorm";
+import { SessionViewDto } from "../../api/view-dto/sessions.view-dto";
 import { DomainException } from "../../../../../core/exceptions/domain-exceptions";
 import { DomainExceptionCode } from "../../../../../core/exceptions/domain-exception-codes";
-import { SessionViewDto } from "../../api/view-dto/sessions.view-dto";
 
 @Injectable()
 export class SessionsQueryRepository {
   constructor(
-    @InjectDataSource() private dataSource: DataSource,
     @InjectRepository(Session) private sessionEntity: Repository<Session>,
   ) {}
 

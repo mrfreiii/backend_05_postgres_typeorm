@@ -2,7 +2,7 @@
 import {
   loginConstraints,
   passwordConstraints,
-} from "../../domain/user.entity.pg";
+} from "../../entity/user.entity.typeorm";
 import { IsEmail, IsString, Length, Matches } from "class-validator";
 import { Trim } from "../../../../../core/decorators/transform/trim";
 import { IsStringWithTrim } from "../../../../../core/decorators/validation/is-string-with-trim";

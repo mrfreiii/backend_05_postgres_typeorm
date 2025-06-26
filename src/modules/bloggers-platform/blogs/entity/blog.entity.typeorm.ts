@@ -6,7 +6,6 @@ import {
   PrimaryGeneratedColumn,
   OneToMany,
 } from "typeorm";
-import { Session } from "../../../user-accounts/sessions/entity/session.entity.typeorm";
 import { Post } from "../../posts/entity/post.entity.typeorm";
 
 @Entity()

@@ -10,7 +10,7 @@ import { convertObjectToQueryString } from "../../utils/convertObjectToQueryStri
 
 import { SortDirection } from "../../core/dto/base.query-params.input-dto";
 import { BlogViewDtoPg } from "../../modules/bloggers-platform/blogs/api/view-dto/blogs.view-dto.pg";
-import { PostViewDtoPg } from "../../modules/bloggers-platform/posts/api/view-dto/posts.view-dto.pg";
+import { PostViewDtoTypeorm } from "../../modules/bloggers-platform/posts/api/view-dto/posts.view-dto.pg";
 import { CreateBlogInputDto } from "../../modules/bloggers-platform/blogs/api/input-dto/blogs.input-dto";
 import { CreatePostInputDto } from "../../modules/bloggers-platform/posts/api/input-dto/posts.input-dto";
 import { GetBlogsQueryParams } from "../../modules/bloggers-platform/blogs/api/input-dto/get-blogs-query-params.input-dto";
@@ -412,7 +412,7 @@ describe("get posts by blogId /blogs/:id/posts", () => {
   connectToTestDBAndClearRepositories();
 
   let userToken: string;
-  let createdPosts: PostViewDtoPg[];
+  let createdPosts: PostViewDtoTypeorm[];
 
   beforeAll(async () => {
     createdPosts = await createTestPostsByBlog(2);
@@ -422,12 +422,11 @@ describe("get posts by blogId /blogs/:id/posts", () => {
     const usersTokens = await getUsersJwtTokens(createdUsers);
     userToken = usersTokens[0];
 
-    // TODO: вернуть когда сделаю лайки
-    // await req
-    //   .put(`${SETTINGS.PATH.POSTS}/${createdPosts[0].id}/like-status`)
-    //   .set("Authorization", `Bearer ${userToken}`)
-    //   .send({ likeStatus: "Like" })
-    //   .expect(204);
+    await req
+      .put(`${SETTINGS.PATH.POSTS}/${createdPosts[0].id}/like-status`)
+      .set("Authorization", `Bearer ${userToken}`)
+      .send({ likeStatus: "Like" })
+      .expect(204);
   });
 
   it("should return 401 for unauthorized user", async () => {
@@ -461,7 +460,24 @@ describe("get posts by blogId /blogs/:id/posts", () => {
     expect(res.body.totalCount).toBe(2);
     expect(res.body.items.length).toBe(2);
 
-    expect(res.body.items).toEqual([createdPosts[1], createdPosts[0]]);
+    expect(res.body.items).toEqual([
+      createdPosts[1],
+      {
+        ...createdPosts[0],
+        extendedLikesInfo: {
+          likesCount: 1,
+          dislikesCount: 0,
+          myStatus: "None",
+          newestLikes: [
+            {
+              addedAt: expect.any(String),
+              login: expect.any(String),
+              userId: expect.any(String),
+            },
+          ],
+        },
+      },
+    ]);
   });
 });
 

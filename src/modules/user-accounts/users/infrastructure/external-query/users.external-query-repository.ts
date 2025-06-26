@@ -1,29 +1,36 @@
-import { DataSource } from "typeorm";
+import { Repository } from "typeorm";
 import { Injectable } from "@nestjs/common";
-import { InjectDataSource } from "@nestjs/typeorm";
+import { InjectRepository } from "@nestjs/typeorm";
 
-import { SETTINGS } from "../../../../../settings";
+import { User } from "../../entity/user.entity.typeorm";
 import { UserViewDtoPg } from "../../api/view-dto/users.view-dto.pg";
 import { DomainException } from "../../../../../core/exceptions/domain-exceptions";
 import { DomainExceptionCode } from "../../../../../core/exceptions/domain-exception-codes";
 
 @Injectable()
 export class UsersExternalQueryRepository {
-  constructor(@InjectDataSource() private dataSource: DataSource) {}
+  constructor(@InjectRepository(User) private userEntity: Repository<User>) {}
 
-  async getByIdOrNotFoundFail_pg(id: string): Promise<UserViewDtoPg> {
-    const query = `
-       SELECT * FROM ${SETTINGS.TABLES.USERS} WHERE "id" = $1 AND "deletedAt" IS NULL;
-    `;
-
+  async getByIdOrNotFoundFail_typeorm(id: string): Promise<UserViewDtoPg> {
     try {
-      const result = await this.dataSource.query(query, [id]);
+      const user = await this.userEntity.findOne({
+        where: { id },
+      });
 
-      if (!result.length) {
-        throw new Error();
+      if (!user) {
+        throw new DomainException({
+          code: DomainExceptionCode.NotFound,
+          message: "User not found",
+          extensions: [
+            {
+              field: "",
+              message: "User not found",
+            },
+          ],
+        });
       }
 
-      return UserViewDtoPg.mapToView(result?.[0]);
+      return UserViewDtoPg.mapToView(user);
     } catch {
       throw new DomainException({
         code: DomainExceptionCode.InternalServerError,

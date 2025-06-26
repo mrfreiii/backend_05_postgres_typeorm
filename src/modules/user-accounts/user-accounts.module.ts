@@ -13,11 +13,6 @@ import { NotificationsModule } from "../notifications/notifications.module";
 import { User } from "./users/entity/user.entity.typeorm";
 import { UserRegistration } from "./users/entity/registation.entity.typeorm";
 
-import { UserEntity } from "./users/domain/user.entity.pg";
-import { SessionEntity } from "./sessions/domain/session.entity.pg";
-import { RegistrationEntity } from "./users/domain/registration.entity.pg";
-import { PasswordRecoveryEntity } from "./users/domain/passwordRecovery.entity.pg";
-
 import { AuthController } from "./auth/api/auth.controller";
 import { UsersController } from "./users/api/users.controller";
 import { SessionsController } from "./sessions/api/sessions.controller";
@@ -105,13 +100,6 @@ const repos = [
 
 const strategies = [LocalStrategy, JwtStrategy];
 
-const entities = [
-  UserEntity,
-  RegistrationEntity,
-  PasswordRecoveryEntity,
-  SessionEntity,
-];
-
 const typeorm_entities = [
   User,
   UserRegistration,
@@ -126,13 +114,7 @@ const typeorm_entities = [
     TypeOrmModule.forFeature([...typeorm_entities]),
   ],
   controllers: [UsersController, AuthController, SessionsController],
-  providers: [
-    ...commandHandlers,
-    ...services,
-    ...repos,
-    ...strategies,
-    ...entities,
-  ],
+  providers: [...commandHandlers, ...services, ...repos, ...strategies],
   exports: [
     UsersExternalQueryRepository,
     UsersExternalService,

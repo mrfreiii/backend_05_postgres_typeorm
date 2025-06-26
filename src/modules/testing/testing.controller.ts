@@ -16,6 +16,7 @@ import { DomainException } from "../../core/exceptions/domain-exceptions";
 import { DomainExceptionCode } from "../../core/exceptions/domain-exception-codes";
 import { UserRegistration } from "../user-accounts/users/entity/registation.entity.typeorm";
 import { UserPasswordRecovery } from "../user-accounts/users/entity/passwordRecovery.entity.typeorm";
+import { LikeStatus } from "../bloggers-platform/likes/entity/likes.entity.typeorm";
 
 @Controller(SETTINGS.PATH.TESTING)
 export class TestingController {
@@ -23,6 +24,8 @@ export class TestingController {
     @InjectDataSource() private dataSource: DataSource,
     @InjectRepository(RateLimit) private rateLimitEntity: Repository<RateLimit>,
     @InjectRepository(User) private userEntity: Repository<User>,
+    @InjectRepository(LikeStatus)
+    private likeStatusEntity: Repository<LikeStatus>,
     @InjectRepository(UserRegistration)
     private userRegistrationEntity: Repository<UserRegistration>,
     @InjectRepository(UserPasswordRecovery)
@@ -32,6 +35,8 @@ export class TestingController {
   @Delete("all-data")
   @HttpCode(HttpStatus.NO_CONTENT)
   async deleteAll() {
+    const skipTables = ["migrations", this.likeStatusEntity.metadata.tableName];
+
     const allTables = await this.dataSource.query(`
         SELECT table_name 
         FROM information_schema.tables 
@@ -40,10 +45,9 @@ export class TestingController {
 
     const promises = allTables
       .map((table: { table_name: string }) => table.table_name)
+      .filter((name: string) => !skipTables.includes(name))
       .map((name: string) => {
-        const query = `
-         TRUNCATE TABLE "${name}" RESTART IDENTITY CASCADE;
-        `;
+        const query = `TRUNCATE TABLE "${name}" RESTART IDENTITY CASCADE`;
 
         return this.dataSource.query(query);
       });

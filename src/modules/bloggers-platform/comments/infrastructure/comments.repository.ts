@@ -1,11 +1,11 @@
-import { DataSource } from "typeorm";
 import { Injectable } from "@nestjs/common";
 import { validate as isValidUUID } from "uuid";
-import { InjectDataSource } from "@nestjs/typeorm";
+import { DataSource, Repository } from "typeorm";
+import { InjectDataSource, InjectRepository } from "@nestjs/typeorm";
 
 import { SETTINGS } from "../../../../settings";
-import { CommentEntityType } from "../domain/comment.entity.pg";
 import { LikeStatusEnum } from "../../enums/likes.enum";
+import { Comment } from "../entity/comment.entity.typeorm";
 import { CommentQuerySelectType } from "./types/commentQueryType";
 import { CommentLikeEntity } from "../domain/commentLike.entity.pg";
 import { DomainException } from "../../../../core/exceptions/domain-exceptions";
@@ -13,33 +13,23 @@ import { DomainExceptionCode } from "../../../../core/exceptions/domain-exceptio
 
 @Injectable()
 export class CommentsRepository {
-  constructor(@InjectDataSource() private dataSource: DataSource) {}
+  constructor(
+    @InjectDataSource() private dataSource: DataSource,
+    @InjectRepository(Comment) private commentEntity: Repository<Comment>,
+  ) {}
 
-  async createComment_pg(comment: CommentEntityType): Promise<void> {
-    const query = `
-        INSERT INTO ${SETTINGS.TABLES.COMMENTS}
-            ("id","content","postId","userId","createdAt")
-            VALUES
-            ($1, $2, $3, $4, $5)
-    `;
-
+  async save_comment_typeorm(comment: Comment): Promise<void> {
     try {
-      await this.dataSource.query(query, [
-        comment.id,
-        comment.content,
-        comment.postId,
-        comment.userId,
-        comment.createdAt,
-      ]);
+      await this.commentEntity.save(comment);
     } catch (e) {
       console.log(e);
       throw new DomainException({
         code: DomainExceptionCode.InternalServerError,
-        message: "Failed to create comment in db",
+        message: "Failed to save comment in db",
         extensions: [
           {
             field: "",
-            message: "Failed to create comment in db",
+            message: "Failed to save comment in db",
           },
         ],
       });

@@ -8,21 +8,20 @@ import {
 } from "../../enums/likes.enum";
 import { CreatePostDto } from "../dto/post.dto";
 import { Post } from "../entity/post.entity.typeorm";
-import { PostEntity } from "../domain/post.entity.pg";
-import { NewestLikesPg } from "../../types/likes.types";
-import { GetPostByIdDto } from "./dto/get-post-by-id.dto";
-import { PostViewDtoPg } from "../api/view-dto/posts.view-dto.pg";
+import { PostLike } from "../entity/postLike.entity.typeorm";
 import { PostsRepository } from "../infrastructure/posts.repository";
 import { UpdatePostInputDto } from "../api/input-dto/update-post.input-dto";
+import { PostLikesRepository } from "../infrastructure/postLikes.repository";
 import { BlogsRepository } from "../../blogs/infrastructure/blogs.repository";
 
 @Injectable()
 export class PostsService {
   constructor(
     private postsRepository: PostsRepository,
+    private postLikesRepository: PostLikesRepository,
     private blogsRepository: BlogsRepository,
-    private postEntity_: PostEntity,
     @InjectRepository(Post) private postEntity: Repository<Post>,
+    @InjectRepository(PostLike) private postLikeEntity: Repository<PostLike>,
   ) {}
 
   async createPost_typeorm(dto: CreatePostDto): Promise<string> {
@@ -38,57 +37,6 @@ export class PostsService {
     await this.postsRepository.save_post_typeorm(post);
 
     return post.id;
-  }
-
-  // async getPostById_pg(dto: GetPostByIdDto): Promise<PostViewDtoPg> {
-  //   const { postId, userId } = dto;
-  //
-  //   const post =
-  //     await this.postsRepository.getByIdOrNotFoundFail_typeorm(postId);
-  //
-  //   const likesCount = await this._getLikesCount_pg(postId);
-  //   const dislikesCount = await this._getDislikesCount_pg(postId);
-  //   const lastThreeLikes = await this._getLastThreeLikes_pg(postId);
-  //   const userLikeStatus = await this._getUserLikeStatus_pg({ postId, userId });
-  //
-  //   return PostViewDtoPg.mapToView({
-  //     post,
-  //     likesCount,
-  //     dislikesCount,
-  //     newestLikes: lastThreeLikes,
-  //     myStatus: userLikeStatus,
-  //   });
-  // }
-
-  async getPostsLikeInfo_pg(dto: {
-    posts: PostViewDtoPg[];
-    userId: string | null;
-  }): Promise<PostViewDtoPg[]> {
-    const { posts, userId } = dto;
-
-    const updatedPosts: PostViewDtoPg[] = [];
-
-    for (let i = 0; i < posts.length; i++) {
-      const likesCount = await this._getLikesCount_pg(posts[i].id);
-      const dislikesCount = await this._getDislikesCount_pg(posts[i].id);
-      const lastThreeLikes = await this._getLastThreeLikes_pg(posts[i].id);
-      const userLikeStatus = await this._getUserLikeStatus_pg({
-        postId: posts[i].id,
-        userId,
-      });
-
-      updatedPosts.push({
-        ...posts[i],
-        extendedLikesInfo: {
-          likesCount,
-          dislikesCount,
-          newestLikes: lastThreeLikes,
-          myStatus: userLikeStatus,
-        },
-      });
-    }
-
-    return updatedPosts;
   }
 
   async updatePost_typeorm({
@@ -122,16 +70,16 @@ export class PostsService {
     await this.postsRepository.deletePost_typeorm(post.id);
   }
 
-  async updatePostLikeStatus_pg(dto: {
+  async updatePostLikeStatus_typeorm(dto: {
     userId: string;
     postId: string;
     newLikeStatus: LikeStatusEnum;
   }): Promise<void> {
     const { userId, postId, newLikeStatus } = dto;
 
-    await this.postsRepository.getByIdOrNotFoundFail_typeorm(postId);
+    await this.postsRepository.checkIfExist_typeorm(postId);
 
-    const postLike = await this.postsRepository.findPostLike_pg({
+    const postLike = await this.postLikesRepository.findPostLike_typeorm({
       postId,
       userId,
     });
@@ -141,72 +89,29 @@ export class PostsService {
         case LikeStatusEnum.None:
           break;
         case LikeStatusEnum.Like:
-        case LikeStatusEnum.Dislike:
-          await this.postsRepository.createPostLike_pg({
+        case LikeStatusEnum.Dislike: {
+          const postLike = this.postLikeEntity.create({
             postId,
             userId,
-            likeStatus: mapEnumLikeStatusToBdStatus(newLikeStatus),
-            updatedAt: new Date(Date.now()).toISOString(),
+            likeStatusId: mapEnumLikeStatusToBdStatus(newLikeStatus),
           });
+
+          await this.postLikesRepository.save_post_like_typeorm(postLike);
           break;
+        }
       }
     } else {
       switch (newLikeStatus) {
         case LikeStatusEnum.None:
-          await this.postsRepository.deletePostLike_pg(postLike.id);
+          await this.postLikesRepository.deletePostLike_typeorm(postLike.id);
           break;
         case LikeStatusEnum.Like:
         case LikeStatusEnum.Dislike:
-          await this.postsRepository.updatePostLike_pg({
-            postLikeId: postLike?.id,
-            newLikeStatus: mapEnumLikeStatusToBdStatus(newLikeStatus),
-            updatedAt: new Date(Date.now()).toISOString(),
-          });
+          postLike.likeStatusId = mapEnumLikeStatusToBdStatus(newLikeStatus);
+
+          await this.postLikesRepository.save_post_like_typeorm(postLike);
           break;
       }
     }
-  }
-
-  async _getLikesCount_pg(postId: string): Promise<number> {
-    const response = await this.postsRepository.getPostLikesStatusCount_pg({
-      postId,
-      likeStatus: LikeStatusEnum.Like,
-    });
-
-    return response ?? 0;
-  }
-
-  async _getDislikesCount_pg(postId: string): Promise<number> {
-    const response = await this.postsRepository.getPostLikesStatusCount_pg({
-      postId,
-      likeStatus: LikeStatusEnum.Dislike,
-    });
-
-    return response ?? 0;
-  }
-
-  async _getLastThreeLikes_pg(postId: string): Promise<NewestLikesPg[]> {
-    const response =
-      await this.postsRepository.getPostLastThreeLikes_pg(postId);
-
-    return response ?? [];
-  }
-
-  async _getUserLikeStatus_pg(dto: {
-    postId: string;
-    userId: string | null;
-  }): Promise<LikeStatusEnum> {
-    const { userId, postId } = dto;
-
-    let userLikeStatus = LikeStatusEnum.None;
-
-    if (userId) {
-      userLikeStatus = await this.postsRepository.getUserPostLikeStatus_pg({
-        postId,
-        userId,
-      });
-    }
-
-    return userLikeStatus ?? LikeStatusEnum.None;
   }
 }

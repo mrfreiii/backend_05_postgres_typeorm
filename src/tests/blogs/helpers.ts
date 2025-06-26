@@ -1,7 +1,7 @@
 import { SETTINGS } from "../../settings";
 import { req, testBasicAuthHeader } from "../helpers";
 import { BlogViewDtoPg } from "../../modules/bloggers-platform/blogs/api/view-dto/blogs.view-dto.pg";
-import { PostViewDtoPg } from "../../modules/bloggers-platform/posts/api/view-dto/posts.view-dto.pg";
+import { PostViewDtoTypeorm } from "../../modules/bloggers-platform/posts/api/view-dto/posts.view-dto.pg";
 import { CreateBlogInputDto } from "../../modules/bloggers-platform/blogs/api/input-dto/blogs.input-dto";
 import { CreatePostInputDto } from "../../modules/bloggers-platform/posts/api/input-dto/posts.input-dto";
 
@@ -32,8 +32,8 @@ export const createTestBlogs = async (
 
 export const createTestPostsByBlog = async (
   count: number = 1,
-): Promise<PostViewDtoPg[]> => {
-  const result: PostViewDtoPg[] = [];
+): Promise<PostViewDtoTypeorm[]> => {
+  const result: PostViewDtoTypeorm[] = [];
 
   const blog = (await createTestBlogs())[0];
 

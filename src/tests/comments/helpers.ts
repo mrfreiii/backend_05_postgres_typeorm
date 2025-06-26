@@ -4,10 +4,10 @@ import { createTestPostsByBlog } from "../blogs/helpers";
 import { createTestUsers, getUsersJwtTokens } from "../users/helpers";
 import { UserViewDtoPg } from "../../modules/user-accounts/users/api/view-dto/users.view-dto.pg";
 import { CreateCommentByPostIdInputDto } from "../../modules/bloggers-platform/posts/api/input-dto/posts.input-dto";
-import { CommentViewDtoPg } from "../../modules/bloggers-platform/comments/api/view-dto/comments.view-dto.pg";
+import { CommentViewDtoTypeorm } from "../../modules/bloggers-platform/comments/api/view-dto/comments.view-dto.pg";
 
 export type TestCommentDataType = {
-  comments: CommentViewDtoPg[];
+  comments: CommentViewDtoTypeorm[];
   createdPostId: string;
   createdUser: UserViewDtoPg;
   userToken: string;
@@ -16,7 +16,7 @@ export type TestCommentDataType = {
 export const createTestComments = async (
   count: number = 1,
 ): Promise<TestCommentDataType> => {
-  const commentsList: CommentViewDtoPg[] = [];
+  const commentsList: CommentViewDtoTypeorm[] = [];
 
   const createdPost = (await createTestPostsByBlog())[0];
 

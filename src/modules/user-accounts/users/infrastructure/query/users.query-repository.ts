@@ -20,7 +20,16 @@ export class UsersQueryRepository {
       });
 
       if (!user) {
-        throw new Error();
+        throw new DomainException({
+          code: DomainExceptionCode.NotFound,
+          message: "User not found",
+          extensions: [
+            {
+              field: "",
+              message: "User not found",
+            },
+          ],
+        });
       }
 
       return UserViewDtoPg.mapToView(user);

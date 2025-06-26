@@ -26,7 +26,7 @@ import { PostsQueryRepository } from "../../posts/infrastructure/query/posts.que
 
 import { SETTINGS } from "../../../../settings";
 import { BlogViewDtoPg } from "./view-dto/blogs.view-dto.pg";
-import { PostViewDtoPg } from "../../posts/api/view-dto/posts.view-dto.pg";
+import { PostViewDtoTypeorm } from "../../posts/api/view-dto/posts.view-dto.pg";
 import { UpdatePostByBlogInputDto } from "./input-dto/update-post-by-blog.input-dto";
 import { BasicAuthGuard } from "../../../user-accounts/guards/basic/basic-auth.guard";
 import { CreatePostByBlogIdInputDto } from "./input-dto/create-post-by-blog-id.input-dto";
@@ -76,20 +76,20 @@ export class BlogsAdminController {
   async createPostsByBlogId(
     @Param("id") id: string,
     @Body() body: CreatePostByBlogIdInputDto,
-  ): Promise<PostViewDtoPg> {
+  ): Promise<PostViewDtoTypeorm> {
     const postId = await this.postsService.createPost_typeorm({
       ...body,
       blogId: id,
     });
 
-    return this.postsQueryRepository.getByIdOrNotFoundFail_typeorm(postId);
+    return this.postsQueryRepository.getByIdOrNotFoundFail_typeorm({ postId });
   }
 
   @Get(":id/posts")
   async getPostsByBlogId(
     @Query() query: GetPostsQueryParams,
     @Param("id") id: string,
-  ): Promise<PaginatedViewDto<PostViewDtoPg[]>> {
+  ): Promise<PaginatedViewDto<PostViewDtoTypeorm[]>> {
     await this.blogsQueryRepository.getByIdOrNotFoundFail_typeorm(id);
 
     return this.postsQueryRepository.getAll_typeorm({

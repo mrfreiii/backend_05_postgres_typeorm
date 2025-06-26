@@ -1,13 +1,9 @@
-import { DataSource, Repository } from "typeorm";
+import { Repository } from "typeorm";
 import { Injectable } from "@nestjs/common";
 import { validate as isValidUUID } from "uuid";
-import { InjectDataSource, InjectRepository } from "@nestjs/typeorm";
+import { InjectRepository } from "@nestjs/typeorm";
 
-import { SETTINGS } from "../../../../settings";
 import { User } from "../entity/user.entity.typeorm";
-import { UserEntity } from "../domain/user.entity.pg";
-import { RegistrationEntity } from "../domain/registration.entity.pg";
-import { PasswordRecoveryEntity } from "../domain/passwordRecovery.entity.pg";
 import { DomainException } from "../../../../core/exceptions/domain-exceptions";
 import { DomainExceptionCode } from "../../../../core/exceptions/domain-exception-codes";
 import { UserRegistration } from "../entity/registation.entity.typeorm";
@@ -16,7 +12,6 @@ import { UserPasswordRecovery } from "../entity/passwordRecovery.entity.typeorm"
 @Injectable()
 export class UsersRepository {
   constructor(
-    @InjectDataSource() private dataSource: DataSource,
     @InjectRepository(User) private userEntity: Repository<User>,
     @InjectRepository(UserRegistration)
     private userRegistrationEntity: Repository<UserRegistration>,

@@ -10,7 +10,7 @@ import { convertObjectToQueryString } from "../../utils/convertObjectToQueryStri
 import { createTestUsers, getUsersJwtTokens } from "../users/helpers";
 import { SortDirection } from "../../core/dto/base.query-params.input-dto";
 import { UserViewDtoPg } from "../../modules/user-accounts/users/api/view-dto/users.view-dto.pg";
-import { PostViewDtoPg } from "../../modules/bloggers-platform/posts/api/view-dto/posts.view-dto.pg";
+import { PostViewDtoTypeorm } from "../../modules/bloggers-platform/posts/api/view-dto/posts.view-dto.pg";
 import { BlogViewDtoPg } from "../../modules/bloggers-platform/blogs/api/view-dto/blogs.view-dto.pg";
 import { GetBlogsQueryParams } from "../../modules/bloggers-platform/blogs/api/input-dto/get-blogs-query-params.input-dto";
 
@@ -102,10 +102,33 @@ describe("get all blogs /blogs", () => {
   });
 });
 
+describe("get blog by id /blogs/:id", () => {
+  connectToTestDBAndClearRepositories();
+
+  it("should return 404 for non existent blog", async () => {
+    const res = await req.get(`${SETTINGS.PATH.BLOGS_PUBLIC}/7777`).expect(404);
+
+    expect(res.body.errorsMessages[0]).toEqual({
+      field: "",
+      message: "Blog not found",
+    });
+  });
+
+  it("should return blog", async () => {
+    const createdBlog = (await createTestBlogs())[0];
+
+    const res = await req
+      .get(`${SETTINGS.PATH.BLOGS_PUBLIC}/${createdBlog.id}`)
+      .expect(200);
+
+    expect(res.body).toEqual(createdBlog);
+  });
+});
+
 describe("get posts by blogId /blogs/:id/posts", () => {
   connectToTestDBAndClearRepositories();
 
-  let createdPosts: PostViewDtoPg[];
+  let createdPosts: PostViewDtoTypeorm[];
 
   let user: UserViewDtoPg;
   let userToken: string;
@@ -119,12 +142,11 @@ describe("get posts by blogId /blogs/:id/posts", () => {
     const usersTokens = await getUsersJwtTokens(createdUsers);
     userToken = usersTokens[0];
 
-    // TODO: вернуть когда сделаю лайки
-    // await req
-    //   .put(`${SETTINGS.PATH.POSTS}/${createdPosts[0].id}/like-status`)
-    //   .set("Authorization", `Bearer ${userToken}`)
-    //   .send({ likeStatus: "Like" })
-    //   .expect(204);
+    await req
+      .put(`${SETTINGS.PATH.POSTS}/${createdPosts[0].id}/like-status`)
+      .set("Authorization", `Bearer ${userToken}`)
+      .send({ likeStatus: "Like" })
+      .expect(204);
   });
 
   it("should return 404 for non existent blog", async () => {
@@ -152,23 +174,21 @@ describe("get posts by blogId /blogs/:id/posts", () => {
 
     expect(res.body.items).toEqual([
       createdPosts[1],
-      createdPosts[0],
-      // TODO: вернуть после того как сделаю лайки
-      // {
-      //   ...createdPosts[0],
-      //   extendedLikesInfo: {
-      //     likesCount: 1,
-      //     dislikesCount: 0,
-      //     myStatus: "None",
-      //     newestLikes: [
-      //       {
-      //         addedAt: expect.any(String),
-      //         login: user.login,
-      //         userId: user.id,
-      //       },
-      //     ],
-      //   },
-      // },
+      {
+        ...createdPosts[0],
+        extendedLikesInfo: {
+          likesCount: 1,
+          dislikesCount: 0,
+          myStatus: "None",
+          newestLikes: [
+            {
+              addedAt: expect.any(String),
+              login: user.login,
+              userId: user.id,
+            },
+          ],
+        },
+      },
     ]);
   });
 
@@ -186,46 +206,21 @@ describe("get posts by blogId /blogs/:id/posts", () => {
 
     expect(res.body.items).toEqual([
       createdPosts[1],
-      createdPosts[0],
-      // TODO: вернуть после того как сделаю лайки
-      // {
-      //   ...createdPosts[0],
-      //   extendedLikesInfo: {
-      //     likesCount: 1,
-      //     dislikesCount: 0,
-      //     myStatus: "Like",
-      //     newestLikes: [
-      //       {
-      //         addedAt: expect.any(String),
-      //         login: user.login,
-      //         userId: user.id,
-      //       },
-      //     ],
-      //   },
-      // },
+      {
+        ...createdPosts[0],
+        extendedLikesInfo: {
+          likesCount: 1,
+          dislikesCount: 0,
+          myStatus: "Like",
+          newestLikes: [
+            {
+              addedAt: expect.any(String),
+              login: user.login,
+              userId: user.id,
+            },
+          ],
+        },
+      },
     ]);
-  });
-});
-
-describe("get blog by id /blogs/:id", () => {
-  connectToTestDBAndClearRepositories();
-
-  it("should return 404 for non existent blog", async () => {
-    const res = await req.get(`${SETTINGS.PATH.BLOGS_PUBLIC}/7777`).expect(404);
-
-    expect(res.body.errorsMessages[0]).toEqual({
-      field: "",
-      message: "Blog not found",
-    });
-  });
-
-  it("should return blog", async () => {
-    const createdBlog = (await createTestBlogs())[0];
-
-    const res = await req
-      .get(`${SETTINGS.PATH.BLOGS_PUBLIC}/${createdBlog.id}`)
-      .expect(200);
-
-    expect(res.body).toEqual(createdBlog);
   });
 });

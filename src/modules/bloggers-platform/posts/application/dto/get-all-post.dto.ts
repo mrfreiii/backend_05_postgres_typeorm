@@ -1,6 +1,6 @@
-import { PostViewDtoPg } from "../../api/view-dto/posts.view-dto.pg";
+import { PostViewDtoTypeorm } from "../../api/view-dto/posts.view-dto.pg";
 
 export class GetLikesStatusesForPostsDto {
-  posts: PostViewDtoPg[];
+  posts: PostViewDtoTypeorm[];
   userId: string | null;
 }

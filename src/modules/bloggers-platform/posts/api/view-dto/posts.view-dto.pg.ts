@@ -1,21 +1,16 @@
+import { Post } from "../../entity/post.entity.typeorm";
 import { LikeStatusEnum } from "../../../enums/likes.enum";
 import { NewestLikesPg } from "../../../types/likes.types";
-import { Post } from "../../entity/post.entity.typeorm";
-import { PostEntityType } from "../../domain/post.entity.pg";
 
 export type PostQueryRepoType = Post & {
   blogName: string;
-};
-
-export class PostViewDtoPgInputType {
-  post: PostQueryRepoType | PostEntityType; //удалить PostEntityType после миграции на typeorm
-  likesCount?: number;
-  dislikesCount?: number;
+  likesCount?: string;
+  dislikesCount?: string;
   myStatus?: LikeStatusEnum;
   newestLikes?: NewestLikesPg[];
-}
+};
 
-export class PostViewDtoPg {
+export class PostViewDtoTypeorm {
   id: string;
   title: string;
   shortDescription: string;
@@ -30,23 +25,23 @@ export class PostViewDtoPg {
     newestLikes: NewestLikesPg[] | [];
   };
 
-  static mapToView(dto: PostViewDtoPgInputType): PostViewDtoPg {
-    const post = new PostViewDtoPg();
+  static mapToView(post: PostQueryRepoType): PostViewDtoTypeorm {
+    const viewPost = new PostViewDtoTypeorm();
 
-    post.id = dto.post.id;
-    post.title = dto.post.title;
-    post.shortDescription = dto.post.shortDescription;
-    post.content = dto.post.content;
-    post.blogId = dto.post.blogId;
-    post.blogName = dto.post.blogName;
-    post.createdAt = dto.post.createdAt;
-    post.extendedLikesInfo = {
-      likesCount: dto.likesCount || 0,
-      dislikesCount: dto.dislikesCount || 0,
-      myStatus: dto.myStatus || LikeStatusEnum.None,
-      newestLikes: dto.newestLikes || [],
+    viewPost.id = post.id;
+    viewPost.title = post.title;
+    viewPost.shortDescription = post.shortDescription;
+    viewPost.content = post.content;
+    viewPost.blogId = post.blogId;
+    viewPost.blogName = post.blogName;
+    viewPost.createdAt = post.createdAt;
+    viewPost.extendedLikesInfo = {
+      likesCount: Number(post.likesCount) || 0,
+      dislikesCount: Number(post.dislikesCount) || 0,
+      myStatus: post.myStatus || LikeStatusEnum.None,
+      newestLikes: post.newestLikes || [],
     };
 
-    return post;
+    return viewPost;
   }
 }

@@ -1,14 +1,14 @@
 import { LikeStatusEnum } from "../../../enums/likes.enum";
-import { CommentQuerySelectType } from "../../infrastructure/types/commentQueryType";
+import { Comment } from "../../entity/comment.entity.typeorm";
 
-export class CommentViewDtoPgInputType {
-  comment: CommentQuerySelectType;
-  likesCount?: number;
-  dislikesCount?: number;
+export type CommentQueryRepoType = Comment & {
+  userLogin: string;
+  likesCount?: string;
+  dislikesCount?: string;
   myStatus?: LikeStatusEnum;
-}
+};
 
-export class CommentViewDtoPg {
+export class CommentViewDtoTypeorm {
   id: string;
   content: string;
   commentatorInfo: {
@@ -22,22 +22,22 @@ export class CommentViewDtoPg {
     myStatus: string;
   };
 
-  static mapToView(dto: CommentViewDtoPgInputType): CommentViewDtoPg {
-    const comment = new CommentViewDtoPg();
+  static mapToView(comment: CommentQueryRepoType): CommentViewDtoTypeorm {
+    const viewComment = new CommentViewDtoTypeorm();
 
-    comment.id = dto.comment.id;
-    comment.content = dto.comment.content;
-    comment.commentatorInfo = {
-      userId: dto.comment.userId,
-      userLogin: dto.comment.userLogin,
+    viewComment.id = comment.id;
+    viewComment.content = comment.content;
+    viewComment.commentatorInfo = {
+      userId: comment.userId,
+      userLogin: comment.userLogin,
     };
-    comment.createdAt = dto.comment.createdAt;
-    comment.likesInfo = {
-      likesCount: dto.likesCount || 0,
-      dislikesCount: dto.dislikesCount || 0,
-      myStatus: dto.myStatus || LikeStatusEnum.None,
+    viewComment.createdAt = comment.createdAt;
+    viewComment.likesInfo = {
+      likesCount: Number(comment.likesCount) || 0,
+      dislikesCount: Number(comment.dislikesCount) || 0,
+      myStatus: comment.myStatus || LikeStatusEnum.None,
     };
 
-    return comment;
+    return viewComment;
   }
 }

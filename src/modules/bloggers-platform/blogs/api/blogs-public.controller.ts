@@ -1,7 +1,7 @@
 import { Controller, Get, Param, Query, UseGuards } from "@nestjs/common";
 
 import { BlogViewDtoPg } from "./view-dto/blogs.view-dto.pg";
-import { PostViewDtoPg } from "../../posts/api/view-dto/posts.view-dto.pg";
+import { PostViewDtoTypeorm } from "../../posts/api/view-dto/posts.view-dto.pg";
 import { PaginatedViewDto } from "../../../../core/dto/base.paginated.view-dto";
 import { GetBlogsQueryParams } from "./input-dto/get-blogs-query-params.input-dto";
 import { UserContextDto } from "../../../user-accounts/guards/dto/user-context.dto";
@@ -38,24 +38,15 @@ export class BlogsPublicController {
   async getPostsByBlogId(
     @Query() query: GetPostsQueryParams,
     @Param("id") id: string,
-    // @ExtractUserIfExistsFromRequest() user: UserContextDto | null,
-  ): Promise<PaginatedViewDto<PostViewDtoPg[]>> {
+    @ExtractUserIfExistsFromRequest() user: UserContextDto | null,
+  ): Promise<PaginatedViewDto<PostViewDtoTypeorm[]>> {
     await this.blogsQueryRepository.getByIdOrNotFoundFail_typeorm(id);
 
-    const paginatedPosts = await this.postsQueryRepository.getAll_typeorm({
+    return this.postsQueryRepository.getAll_typeorm({
       requestParams: query,
       blogId: id,
+      userId: user?.id,
     });
-
-    // const postsWithLikesInfo = await this.postsService.getPostsLikeInfo_pg({
-    //   posts: paginatedPosts.items,
-    //   userId: user?.id || null,
-    // });
-
-    return {
-      ...paginatedPosts,
-      // items: postsWithLikesInfo,
-    };
   }
 
   @Get(":id")

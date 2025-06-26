@@ -27,8 +27,8 @@ import { UserContextDto } from "../../../user-accounts/guards/dto/user-context.d
 import { UpdateLikeStatusInputDto } from "../../comments/api/input-dto/update-like-status.input-dto";
 import { JwtOptionalAuthGuard } from "../../../user-accounts/guards/bearer/jwt-optional-auth.guard";
 import { ExtractUserIfExistsFromRequest } from "../../../user-accounts/guards/decorators/param/extract-user-if-exists-from-request.decorator";
-import { PostViewDtoPg } from "./view-dto/posts.view-dto.pg";
-import { CommentViewDtoPg } from "../../comments/api/view-dto/comments.view-dto.pg";
+import { PostViewDtoTypeorm } from "./view-dto/posts.view-dto.pg";
+import { CommentViewDtoTypeorm } from "../../comments/api/view-dto/comments.view-dto.pg";
 
 @Controller(SETTINGS.PATH.POSTS)
 export class PostsController {
@@ -44,21 +44,12 @@ export class PostsController {
   @Get()
   async getAllPosts(
     @Query() query: GetPostsQueryParams,
-    // @ExtractUserIfExistsFromRequest() user: UserContextDto | null,
-  ): Promise<PaginatedViewDto<PostViewDtoPg[]>> {
-    const paginatedPosts = await this.postsQueryRepository.getAll_typeorm({
+    @ExtractUserIfExistsFromRequest() user: UserContextDto | null,
+  ): Promise<PaginatedViewDto<PostViewDtoTypeorm[]>> {
+    return this.postsQueryRepository.getAll_typeorm({
       requestParams: query,
+      userId: user?.id,
     });
-
-    // const postsWithLikesInfo = await this.postsService.getPostsLikeInfo_pg({
-    //   posts: paginatedPosts.items,
-    //   userId: user?.id || null,
-    // });
-
-    return {
-      ...paginatedPosts,
-      // items: postsWithLikesInfo,
-    };
   }
 
   @ApiBearerAuth()
@@ -66,77 +57,66 @@ export class PostsController {
   @Get(":postId")
   async getPostById(
     @Param("postId") postId: string,
-    // @ExtractUserIfExistsFromRequest() user: UserContextDto | null,
-  ): Promise<PostViewDtoPg> {
-    // return this.postsService.getPostById_pg({
-    //   postId,
-    //   userId: user?.id || null,
-    // });
-    return this.postsQueryRepository.getByIdOrNotFoundFail_typeorm(postId);
+    @ExtractUserIfExistsFromRequest() user: UserContextDto | null,
+  ): Promise<PostViewDtoTypeorm> {
+    return this.postsQueryRepository.getByIdOrNotFoundFail_typeorm({
+      postId,
+      userId: user?.id,
+    });
   }
 
-  // @UseGuards(JwtAuthGuard)
-  // @ApiBearerAuth()
-  // @Post(":id/comments")
-  // async createCommentByPostId(
-  //   @Param("id") id: string,
-  //   @Body() body: CreateCommentByPostIdInputDto,
-  //   @ExtractUserFromRequest() user: UserContextDto,
-  // ): Promise<CommentViewDtoPg> {
-  //   await this.postsQueryRepository.getByIdOrNotFoundFail_pg(id);
-  //
-  //   const commentId = await this.commentsService.createComment_pg({
-  //     content: body.content,
-  //     postId: id,
-  //     userId: user.id,
-  //   });
-  //
-  //   return this.commentsService.getCommentById_pg({
-  //     commentId,
-  //     userId: null,
-  //   });
-  // }
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @Put(":postId/like-status")
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async updatePostLikeStatus(
+    @Param("postId") postId: string,
+    @Body() body: UpdateLikeStatusInputDto,
+    @ExtractUserFromRequest() user: UserContextDto,
+  ): Promise<void> {
+    return this.postsService.updatePostLikeStatus_typeorm({
+      userId: user.id,
+      postId,
+      newLikeStatus: body.likeStatus,
+    });
+  }
 
-  // @ApiBearerAuth()
-  // @UseGuards(JwtOptionalAuthGuard)
-  // @Get(":id/comments")
-  // async getCommentsByPostId(
-  //   @Query() query: GetCommentsQueryParams,
-  //   @Param("id") id: string,
-  //   @ExtractUserIfExistsFromRequest() user: UserContextDto | null,
-  // ): Promise<PaginatedViewDto<CommentViewDtoPg[]>> {
-  //   await this.postsQueryRepository.getByIdOrNotFoundFail_pg(id);
-  //
-  //   const paginatedComments = await this.commentsQueryRepository.getAll_pg({
-  //     requestParams: query,
-  //     postId: id,
-  //   });
-  //
-  //   const commentsWithLikesInfo =
-  //     await this.commentsService.getCommentsLikeInfo_pg({
-  //       comments: paginatedComments.items,
-  //       userId: user?.id || null,
-  //     });
-  //
-  //   return {
-  //     ...paginatedComments,
-  //     items: commentsWithLikesInfo,
-  //   };
-  // }
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @Post(":id/comments")
+  async createCommentByPostId(
+    @Param("id") id: string,
+    @Body() body: CreateCommentByPostIdInputDto,
+    @ExtractUserFromRequest() user: UserContextDto,
+  ): Promise<CommentViewDtoTypeorm> {
+    await this.postsQueryRepository.checkIfExist_typeorm(id);
 
-  // @UseGuards(JwtAuthGuard)
-  // @ApiBearerAuth()
-  // @Put(":postId/like-status")
-  // @HttpCode(HttpStatus.NO_CONTENT)
-  // async updatePostLikeStatus(
-  //   @Param("postId") postId: string,
-  //   @Body() body: UpdateLikeStatusInputDto,
-  //   @ExtractUserFromRequest() user: UserContextDto,
-  // ): Promise<void> {
-  //   return this.postsService.updatePostLikeStatus_pg({
-  //     userId: user.id,
-  //     postId,
-  //     newLikeStatus: body.likeStatus,
-  //   });
-  // }
+    const commentId = await this.commentsService.createComment_typeorm({
+      content: body.content,
+      postId: id,
+      userId: user?.id,
+    });
+
+    return this.commentsQueryRepository.getByIdOrNotFoundFail_typeorm({
+      commentId,
+      userId: user?.id,
+    });
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtOptionalAuthGuard)
+  @Get(":id/comments")
+  async getCommentsByPostId(
+    @Query() query: GetCommentsQueryParams,
+    @Param("id") id: string,
+    @ExtractUserIfExistsFromRequest() user: UserContextDto | null,
+  ): Promise<PaginatedViewDto<CommentViewDtoTypeorm[]>> {
+    await this.postsQueryRepository.checkIfExist_typeorm(id);
+
+    return this.commentsQueryRepository.getAll_typeorm({
+      requestParams: query,
+      postId: id,
+      userId: user?.id,
+    });
+  }
 }

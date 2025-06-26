@@ -13,7 +13,7 @@ import { ApiBearerAuth } from "@nestjs/swagger";
 
 import { SETTINGS } from "../../../../settings";
 import { CommentsService } from "../application/comments.service";
-import { CommentViewDtoPg } from "./view-dto/comments.view-dto.pg";
+import { CommentViewDtoTypeorm } from "./view-dto/comments.view-dto.pg";
 import { UpdateCommentInputDto } from "./input-dto/update-comment.input-dto";
 import { JwtAuthGuard } from "../../../user-accounts/guards/bearer/jwt-auth.guard";
 import { UserContextDto } from "../../../user-accounts/guards/dto/user-context.dto";
