@@ -43,21 +43,27 @@ export class TestingController {
         WHERE table_schema='public' AND table_type='BASE TABLE'
     `);
 
-    const promises = allTables
+    const allTableNames = allTables
       .map((table: { table_name: string }) => table.table_name)
-      .filter((name: string) => !skipTables.includes(name))
-      .map((name: string) => {
-        const query = `
-          SET FOREIGN_KEY_CHECKS = 0; 
-          TRUNCATE TABLE "${name}" RESTART IDENTITY CASCADE;
-          SET FOREIGN_KEY_CHECKS = 1;
-        `;
+      .filter((name: string) => !skipTables.includes(name));
 
-        return this.dataSource.query(query);
-      });
+    // get deadlock when truncate in parallel
+    // const promises = allTables
+    //   .map((table: { table_name: string }) => table.table_name)
+    //   .filter((name: string) => !skipTables.includes(name))
+    //   .map((name: string) => {
+    //     const query = `TRUNCATE TABLE "${name}" RESTART IDENTITY CASCADE;`;
+    //
+    //     return this.dataSource.query(query);
+    //   });
 
     try {
-      await Promise.all(promises);
+      for (let i = 0; i < allTableNames.length; i++) {
+        await this.dataSource.query(`
+           TRUNCATE TABLE "${allTableNames[i]}" RESTART IDENTITY CASCADE;
+        `);
+      }
+      // await Promise.all(promises); // get deadlock when truncate in parallel
 
       return {
         status: "succeeded",
