@@ -21,6 +21,9 @@ import { PostsRepository } from "./posts/infrastructure/posts.repository";
 import { PostLikesRepository } from "./posts/infrastructure/postLikes.repository";
 import { PostsQueryRepository } from "./posts/infrastructure/query/posts.query-repository";
 
+import {
+  CommentLikesRepository
+} from "./comments/infrastructure/commentLikes.repository";
 import { Comment } from "./comments/entity/comment.entity.typeorm";
 import { CommentEntity } from "./comments/domain/comment.entity.pg";
 import { CommentsController } from "./comments/api/comments.controller";
@@ -45,6 +48,7 @@ const repos = [
   PostLikesRepository,
   PostsQueryRepository,
   CommentsRepository,
+  CommentLikesRepository,
   CommentsQueryRepository,
 ];
 
