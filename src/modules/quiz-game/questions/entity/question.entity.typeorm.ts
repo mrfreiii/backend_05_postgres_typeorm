@@ -19,7 +19,7 @@ export class Question {
   @Column()
   body: string;
 
-  @Column({ array: true })
+  @Column("simple-array")
   correctAnswers: string[];
 
   @Column()
