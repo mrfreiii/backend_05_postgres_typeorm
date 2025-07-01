@@ -33,18 +33,11 @@ import { UpdatePublishedStatusCommand } from "../application/usecases/update-pub
 @Controller(SETTINGS.PATH.QUESTIONS_ADMIN)
 @UseGuards(BasicAuthGuard)
 @ApiBasicAuth("basicAuth")
-export class BlogsAdminController {
+export class QuestionsAdminController {
   constructor(
     private commandBus: CommandBus,
     private questionsQueryRepository: QuestionsQueryRepository,
   ) {}
-
-  @Get()
-  async getAll(
-    @Query() query: GetQuestionsQueryParams,
-  ): Promise<PaginatedViewDto<QuestionViewDto[]>> {
-    return this.questionsQueryRepository.getAll_typeorm(query);
-  }
 
   @Post()
   async createQuestionUser(
@@ -57,12 +50,6 @@ export class BlogsAdminController {
     return this.questionsQueryRepository.getByIdOrNotFoundFail_typeorm(
       questionId,
     );
-  }
-
-  @Delete(":id")
-  @HttpCode(HttpStatus.NO_CONTENT)
-  async deleteQuestion(@Param("id") id: string): Promise<void> {
-    return this.commandBus.execute(new DeleteQuestionCommand(id));
   }
 
   @Put(":id")
@@ -88,5 +75,18 @@ export class BlogsAdminController {
         published: body.published,
       }),
     );
+  }
+
+  @Delete(":id")
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async deleteQuestion(@Param("id") id: string): Promise<void> {
+    return this.commandBus.execute(new DeleteQuestionCommand(id));
+  }
+
+  @Get()
+  async getAll(
+    @Query() query: GetQuestionsQueryParams,
+  ): Promise<PaginatedViewDto<QuestionViewDto[]>> {
+    return this.questionsQueryRepository.getAll_typeorm(query);
   }
 }

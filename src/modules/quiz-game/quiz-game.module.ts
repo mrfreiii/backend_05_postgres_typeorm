@@ -9,6 +9,7 @@ import { DeleteQuestionCommandHandler } from "./questions/application/usecases/d
 import { CreateQuestionCommandHandler } from "./questions/application/usecases/create-question.usecase";
 import { UpdateQuestionCommandHandler } from "./questions/application/usecases/update-question.usecase";
 import { UpdatePublishedStatusCommandHandler } from "./questions/application/usecases/update-published-status.usecase";
+import { QuestionsAdminController } from "./questions/api/questions-admin.controller";
 
 const commandHandlers = [
   CreateQuestionCommandHandler,
@@ -17,7 +18,7 @@ const commandHandlers = [
   UpdatePublishedStatusCommandHandler,
 ];
 
-const controllers = [];
+const controllers = [QuestionsAdminController];
 
 const services = [];
 
