@@ -8,6 +8,7 @@ import { DynamicModule, Module } from "@nestjs/common";
 import { CoreModule } from "./core/core.module";
 import { CoreConfig } from "./core/config/core.config";
 import { TestingModule } from "./modules/testing/testing.module";
+import { QuizGameModule } from "./modules/quiz-game/quiz-game.module";
 import { UserAccountsModule } from "./modules/user-accounts/user-accounts.module";
 import { BloggersPlatformModule } from "./modules/bloggers-platform/bloggers-platform.module";
 
@@ -43,6 +44,7 @@ import { DomainHttpExceptionsFilter } from "./core/exceptions/filters/domain-exc
     TestingModule,
     UserAccountsModule,
     BloggersPlatformModule,
+    QuizGameModule,
   ],
   controllers: [],
   providers: [

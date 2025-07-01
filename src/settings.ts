@@ -8,6 +8,7 @@ export const SETTINGS = {
     COMMENTS: "/comments",
     TESTING: "/testing",
     SESSIONS: "/security/devices",
+    QUESTIONS_ADMIN: "/sa/quiz/questions",
   },
   TABLES: {
     USERS: 'public."Users"',
