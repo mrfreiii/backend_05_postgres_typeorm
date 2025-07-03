@@ -84,7 +84,7 @@ export class QuestionsRepository {
 
   async deletedQuestion_typeorm(id: string): Promise<void> {
     try {
-      await this.questionEntity.delete({ id });
+      await this.questionEntity.softDelete({ id });
     } catch {
       throw new DomainException({
         code: DomainExceptionCode.InternalServerError,

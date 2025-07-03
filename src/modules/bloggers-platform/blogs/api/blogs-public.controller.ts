@@ -7,9 +7,6 @@ import { GetBlogsQueryParams } from "./input-dto/get-blogs-query-params.input-dt
 import { UserContextDto } from "../../../user-accounts/guards/dto/user-context.dto";
 import { GetPostsQueryParams } from "../../posts/api/input-dto/get-posts-query-params.input-dto";
 
-import { BlogsService } from "../application/blogs.service";
-import { PostsService } from "../../posts/application/posts.service";
-
 import { BlogsQueryRepository } from "../infrastructure/query/blogs.query-repository";
 import { PostsQueryRepository } from "../../posts/infrastructure/query/posts.query-repository";
 
@@ -21,8 +18,6 @@ import { ExtractUserIfExistsFromRequest } from "../../../user-accounts/guards/de
 export class BlogsPublicController {
   constructor(
     private blogsQueryRepository: BlogsQueryRepository,
-    private blogsService: BlogsService,
-    private postsService: PostsService,
     private postsQueryRepository: PostsQueryRepository,
   ) {}
 

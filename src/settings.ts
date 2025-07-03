@@ -9,6 +9,7 @@ export const SETTINGS = {
     TESTING: "/testing",
     SESSIONS: "/security/devices",
     QUESTIONS_ADMIN: "/sa/quiz/questions",
+    GAMES: "/pair-game-quiz/pairs",
   },
   TABLES: {
     USERS: 'public."Users"',

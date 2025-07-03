@@ -23,7 +23,8 @@ export class CommentsService {
     private commentLikesRepository: CommentLikesRepository,
     private usersExternalQueryRepository: UsersExternalQueryRepository,
     @InjectRepository(Comment) private commentEntity: Repository<Comment>,
-    @InjectRepository(CommentLike) private commentLikeEntity: Repository<CommentLike>,
+    @InjectRepository(CommentLike)
+    private commentLikeEntity: Repository<CommentLike>,
   ) {}
 
   async createComment_typeorm(dto: CreateCommentDto): Promise<string> {
@@ -106,36 +107,44 @@ export class CommentsService {
 
     await this.commentsRepository.getByIdOrNotFoundFail_typeorm(commentId);
 
-    const commentLike = await this.commentLikesRepository.findCommentLike_typeorm({
-      commentId,
-      userId,
-    });
+    const commentLike =
+      await this.commentLikesRepository.findCommentLike_typeorm({
+        commentId,
+        userId,
+      });
 
     if (!commentLike?.id) {
       switch (newLikeStatus) {
         case LikeStatusEnum.None:
           break;
         case LikeStatusEnum.Like:
-        case LikeStatusEnum.Dislike:
+        case LikeStatusEnum.Dislike: {
           const commentLike = this.commentLikeEntity.create({
             commentId,
             userId,
             likeStatusId: mapEnumLikeStatusToBdStatus(newLikeStatus),
-          })
+          });
 
-          await this.commentLikesRepository.save_comment_like_typeorm(commentLike);
+          await this.commentLikesRepository.save_comment_like_typeorm(
+            commentLike,
+          );
           break;
+        }
       }
     } else {
       switch (newLikeStatus) {
         case LikeStatusEnum.None:
-          await this.commentLikesRepository.deleteCommentLike_typeorm(commentLike.id);
+          await this.commentLikesRepository.deleteCommentLike_typeorm(
+            commentLike.id,
+          );
           break;
         case LikeStatusEnum.Like:
         case LikeStatusEnum.Dislike:
           commentLike.likeStatusId = mapEnumLikeStatusToBdStatus(newLikeStatus);
 
-          await this.commentLikesRepository.save_comment_like_typeorm(commentLike)
+          await this.commentLikesRepository.save_comment_like_typeorm(
+            commentLike,
+          );
           break;
       }
     }

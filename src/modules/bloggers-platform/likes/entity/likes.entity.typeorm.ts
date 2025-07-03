@@ -7,6 +7,4 @@ export class LikeStatus {
 
   @Column()
   status: string;
-
-
 }
