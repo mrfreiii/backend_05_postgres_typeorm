@@ -1,6 +1,15 @@
 import { CommandBus } from "@nestjs/cqrs";
 import { ApiBearerAuth } from "@nestjs/swagger";
-import { Body, Controller, Get, Param, Post, UseGuards } from "@nestjs/common";
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Param,
+  Post,
+  UseGuards,
+} from "@nestjs/common";
 
 import { SETTINGS } from "../../../../settings";
 import { GameViewDtoTypeorm } from "./view-dto/game.view-dto.pg";
@@ -16,6 +25,8 @@ import { AddPlayerAnswerCommand } from "../application/usecases/add-player-answe
 import { AddPlayerAnswerInputDto } from "./input-dto/add-player-answer.input-dto";
 import { PlayerAnswerViewDtoTypeorm } from "./view-dto/playerAnswer.view-dto.pg.ts";
 import { PlayerAnswersQueryRepository } from "../infrastructure/query/playerAnswers.query-repository";
+import { validate as isValidUUID } from "uuid";
+import { GameStatusEnum } from "../enums/gameStatus.enum";
 
 @Controller(SETTINGS.PATH.GAMES)
 @UseGuards(JwtAuthGuard)
@@ -29,6 +40,7 @@ export class GamesController {
   ) {}
 
   @Post("connection")
+  @HttpCode(HttpStatus.OK)
   async connectUserToGame(
     @ExtractUserFromRequest() user: UserContextDto,
   ): Promise<GameViewDtoTypeorm> {
@@ -48,7 +60,10 @@ export class GamesController {
 
     if (gameId === "my-current") {
       const res = await this.gamesRepository.getActiveGameIdByUserId(user?.id);
-      if (!res) {
+      if (
+        !res ||
+        res?.status === (GameStatusEnum.PendingSecondPlayer as string)
+      ) {
         throw new DomainException({
           code: DomainExceptionCode.NotFound,
           message: "There is no active game for current user",
@@ -62,6 +77,19 @@ export class GamesController {
       }
 
       gameId = res?.id;
+    } else {
+      if (!isValidUUID(gameId)) {
+        throw new DomainException({
+          code: DomainExceptionCode.BadRequest,
+          message: "Id has incorrect format",
+          extensions: [
+            {
+              field: "id",
+              message: "Id has incorrect format",
+            },
+          ],
+        });
+      }
     }
 
     const game =
@@ -89,6 +117,7 @@ export class GamesController {
   }
 
   @Post("my-current/answers")
+  @HttpCode(HttpStatus.OK)
   async addGameAnswer(
     @Body() body: AddPlayerAnswerInputDto,
     @ExtractUserFromRequest() user: UserContextDto,

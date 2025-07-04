@@ -48,6 +48,7 @@ export class GamesRepository {
         .leftJoin("g.firstPlayer", "fp")
         .leftJoin("g.secondPlayer", "sp")
         .select("g.id")
+        .addSelect("g.status")
         .where("fp.userId = :userId OR sp.userId = :userId", { userId })
         .andWhere("g.finishGameDate IS NULL")
         .getOne();
@@ -156,16 +157,27 @@ export class GamesRepository {
             sb
               .select(
                 `jsonb_agg(
-                              json_build_object(
-                                  'questionId', gq."questionId",
-                                  'questionBody', q."body",
-                                  'questionAnswers', q."correctAnswers"
-                              )
-                           )`,
+                                json_build_object(
+                                    'questionId', aggregated_gq.id,
+                                    'questionBody', aggregated_gq.body,
+                                    'questionAnswers', aggregated_gq."correctAnswers"
+                                )
+                             )`,
               )
-              .from(GameQuestion, "gq")
-              .leftJoin("gq.question", "q")
-              .where('gq."gameId" = g.id'),
+              .from(
+                (sb) =>
+                  sb
+                    .select([
+                      'gq."questionId" as "id"',
+                      'gqq.body as "body"',
+                      'gqq."correctAnswers" as "correctAnswers"',
+                    ])
+                    .from(GameQuestion, "gq")
+                    .leftJoin("gq.question", "gqq")
+                    .where('gq."gameId" = g.id')
+                    .orderBy('gq."questionId"', "DESC"),
+                "aggregated_gq",
+              ),
           "questionsWithAnswers",
         )
         .where("g.firstPlayerId = :playerId OR g.secondPlayerId = :playerId", {
@@ -232,11 +244,11 @@ export class GamesRepository {
       if (availableQuestionIds.length < GAME_QUESTIONS_COUNT) {
         throw new DomainException({
           code: DomainExceptionCode.Forbidden,
-          message: `There is no enough question in db for creating a game (need min ${GAME_QUESTIONS_COUNT})`,
+          message: `There is no enough published question in db for creating a game (need min ${GAME_QUESTIONS_COUNT})`,
           extensions: [
             {
               field: "",
-              message: `There is no enough question in db for creating a game (need min ${GAME_QUESTIONS_COUNT})`,
+              message: `There is no enough published question in db for creating a game (need min ${GAME_QUESTIONS_COUNT})`,
             },
           ],
         });
