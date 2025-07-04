@@ -128,31 +128,16 @@ describe("register user /registration", () => {
       email: "user6@email.com",
     };
 
-    // attempt #1
-    await req
-      .post(`${SETTINGS.PATH.AUTH}/registration`)
-      .send(newUser1)
-      .expect(204);
-    // attempt #2
-    await req
-      .post(`${SETTINGS.PATH.AUTH}/registration`)
-      .send(newUser2)
-      .expect(204);
-    // attempt #3
-    await req
-      .post(`${SETTINGS.PATH.AUTH}/registration`)
-      .send(newUser3)
-      .expect(204);
-    // attempt #4
-    await req
-      .post(`${SETTINGS.PATH.AUTH}/registration`)
-      .send(newUser4)
-      .expect(204);
-    // attempt #5
-    await req
-      .post(`${SETTINGS.PATH.AUTH}/registration`)
-      .send(newUser5)
-      .expect(204);
+    // attempts #1 - 6
+    const promises = [
+      req.post(`${SETTINGS.PATH.AUTH}/registration`).send(newUser1).expect(204),
+      req.post(`${SETTINGS.PATH.AUTH}/registration`).send(newUser2).expect(204),
+      req.post(`${SETTINGS.PATH.AUTH}/registration`).send(newUser3).expect(204),
+      req.post(`${SETTINGS.PATH.AUTH}/registration`).send(newUser4).expect(204),
+      req.post(`${SETTINGS.PATH.AUTH}/registration`).send(newUser5).expect(204),
+    ];
+    await Promise.all(promises);
+
     // attempt #6
     await req
       .post(`${SETTINGS.PATH.AUTH}/registration`)
