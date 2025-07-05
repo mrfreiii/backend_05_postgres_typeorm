@@ -49,8 +49,8 @@ export class GamesRepository {
         .leftJoin("g.secondPlayer", "sp")
         .select("g.id")
         .addSelect("g.status")
-        .where("fp.userId = :userId OR sp.userId = :userId", { userId })
-        .andWhere("g.finishGameDate IS NULL")
+        .where("g.finishGameDate IS NULL")
+        .andWhere("fp.userId = :userId OR sp.userId = :userId", { userId })
         .getOne();
     } catch (e) {
       console.log(e);

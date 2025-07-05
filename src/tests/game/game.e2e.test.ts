@@ -425,6 +425,57 @@ describe("get current active game for user /my-current", () => {
       finishGameDate: null,
     });
   });
+
+  it("should return 404 after finished game", async () => {
+    // Send answers for 1st player
+    await req // 2nd question
+      .post(`${SETTINGS.PATH.GAMES}/my-current/answers`)
+      .set("Authorization", `Bearer ${user1Token}`)
+      .send({ answer: "any value" })
+      .expect(200);
+    await req // 3rd question
+      .post(`${SETTINGS.PATH.GAMES}/my-current/answers`)
+      .set("Authorization", `Bearer ${user1Token}`)
+      .send({ answer: "any value" })
+      .expect(200);
+    await req // 4th question
+      .post(`${SETTINGS.PATH.GAMES}/my-current/answers`)
+      .set("Authorization", `Bearer ${user1Token}`)
+      .send({ answer: "any value" })
+      .expect(200);
+    await req // 5th question
+      .post(`${SETTINGS.PATH.GAMES}/my-current/answers`)
+      .set("Authorization", `Bearer ${user1Token}`)
+      .send({ answer: "any value" })
+      .expect(200);
+
+    // Send answers for 2nd player
+    await req // 2nd question
+      .post(`${SETTINGS.PATH.GAMES}/my-current/answers`)
+      .set("Authorization", `Bearer ${user2Token}`)
+      .send({ answer: "any value" })
+      .expect(200);
+    await req // 3rd question
+      .post(`${SETTINGS.PATH.GAMES}/my-current/answers`)
+      .set("Authorization", `Bearer ${user2Token}`)
+      .send({ answer: "any value" })
+      .expect(200);
+    await req // 4th question
+      .post(`${SETTINGS.PATH.GAMES}/my-current/answers`)
+      .set("Authorization", `Bearer ${user2Token}`)
+      .send({ answer: "any value" })
+      .expect(200);
+    await req // 5th question
+      .post(`${SETTINGS.PATH.GAMES}/my-current/answers`)
+      .set("Authorization", `Bearer ${user2Token}`)
+      .send({ answer: "any value" })
+      .expect(200);
+
+    await req
+      .get(`${SETTINGS.PATH.GAMES}/my-current`)
+      .set("Authorization", `Bearer ${user1Token}`)
+      .expect(404);
+  });
 });
 
 describe("send answer to questions (only 1st player answers) /my-current/answers", () => {
