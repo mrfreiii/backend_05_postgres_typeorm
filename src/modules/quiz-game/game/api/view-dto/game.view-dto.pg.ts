@@ -56,7 +56,7 @@ export class GameViewDtoTypeorm {
 
     viewGame.id = game.id;
     viewGame.firstPlayerProgress = {
-      answers: game.firstPlayerAnswers,
+      answers: game.firstPlayerAnswers ?? [],
       player: {
         id: game.firstPlayerUserId,
         login: game.firstPlayerUserLogin,
@@ -67,7 +67,7 @@ export class GameViewDtoTypeorm {
       game.status === GameStatusEnum.PendingSecondPlayer
         ? null
         : {
-            answers: game.secondPlayerAnswers,
+            answers: game.secondPlayerAnswers ?? [],
             player: {
               id: game.secondPlayerUserId!,
               login: game.secondPlayerUserLogin!,

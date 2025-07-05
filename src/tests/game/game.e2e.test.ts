@@ -39,7 +39,7 @@ describe("connects to game (sequential requests) /connection", () => {
     expect(res.body).toEqual({
       id: expect.any(String),
       firstPlayerProgress: {
-        answers: null,
+        answers: [],
         player: { id: user1.id, login: user1.login },
         score: 0,
       },
@@ -73,12 +73,12 @@ describe("connects to game (sequential requests) /connection", () => {
     expect(res.body).toEqual({
       id: expect.any(String),
       firstPlayerProgress: {
-        answers: null,
+        answers: [],
         player: { id: user1.id, login: user1.login },
         score: 0,
       },
       secondPlayerProgress: {
-        answers: null,
+        answers: [],
         player: { id: user2.id, login: user2.login },
         score: 0,
       },
@@ -550,7 +550,7 @@ describe("send answer to questions (only 1st player answers) /my-current/answers
         score: 0,
       },
       secondPlayerProgress: {
-        answers: null,
+        answers: [],
         player: { id: user2.id, login: user2.login },
         score: 0,
       },
@@ -686,7 +686,7 @@ describe("send answer to questions (two players answer sequentially) /my-current
         score: 2,
       },
       secondPlayerProgress: {
-        answers: null,
+        answers: [],
         player: { id: user2.id, login: user2.login },
         score: 0,
       },
