@@ -64,14 +64,25 @@ export class GamesQueryRepository {
               .select(
                 `jsonb_agg(
                             json_build_object(
-                                'questionId', pa."questionId", 
-                                'answerStatus', pa."status", 
-                                'addedAt', pa."addedAt"
+                                'questionId', aggregated_pa."id", 
+                                'answerStatus', aggregated_pa."status", 
+                                'addedAt', aggregated_pa."addedAt"
                             )
                          )`,
               )
-              .from(PlayerAnswers, "pa")
-              .where('pa."playerId" = firstPlayer.id'),
+              .from(
+                (sb) =>
+                  sb
+                    .select([
+                      'pa."questionId" as "id"',
+                      'pa.status as "status"',
+                      'pa."addedAt" as "addedAt"',
+                    ])
+                    .from(PlayerAnswers, "pa")
+                    .where('pa."playerId" = firstPlayer.id')
+                    .orderBy('pa."questionId"', "DESC"),
+                "aggregated_pa",
+              ),
           "firstPlayerAnswers",
         )
         .addSelect(
@@ -80,14 +91,25 @@ export class GamesQueryRepository {
               .select(
                 `jsonb_agg(
                             json_build_object(
-                                'questionId', pa."questionId", 
-                                'answerStatus', pa."status", 
-                                'addedAt', pa."addedAt"
+                                'questionId', aggregated_pa."id", 
+                                'answerStatus', aggregated_pa."status", 
+                                'addedAt', aggregated_pa."addedAt"
                             )
                          )`,
               )
-              .from(PlayerAnswers, "pa")
-              .where('pa."playerId" = secondPlayer.id'),
+              .from(
+                (sb) =>
+                  sb
+                    .select([
+                      'pa."questionId" as "id"',
+                      'pa.status as "status"',
+                      'pa."addedAt" as "addedAt"',
+                    ])
+                    .from(PlayerAnswers, "pa")
+                    .where('pa."playerId" = secondPlayer.id')
+                    .orderBy('pa."questionId"', "DESC"),
+                "aggregated_pa",
+              ),
           "secondPlayerAnswers",
         )
         .addSelect(

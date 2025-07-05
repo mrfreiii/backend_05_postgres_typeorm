@@ -1,7 +1,7 @@
 import { config } from "dotenv";
 import request from "supertest";
 import TestAgent from "supertest/lib/agent";
-import { Test, TestingModule } from "@nestjs/testing";
+import { Test, TestingModuleBuilder } from "@nestjs/testing";
 import { MailerService } from "@nestjs-modules/mailer";
 import { NestExpressApplication } from "@nestjs/platform-express";
 
@@ -10,6 +10,8 @@ import { appSetup } from "../setup/app.setup";
 import { initAppModule } from "../init-app-module";
 import { EmailServiceMock } from "./mock/email-service.mock";
 import { EmailService } from "../modules/notifications/application/email.service";
+import { RateLimitMock } from "./mock/rate-limit.mock";
+import { RateLimitGuard } from "../modules/rateLimit/guards/rate-limit.guard";
 
 config();
 
@@ -23,18 +25,25 @@ export const testBasicAuthHeader = `Basic ${encodedUserCredentials}`;
 
 export const emailServiceMock = new EmailServiceMock({} as MailerService);
 
-export const connectToTestDBAndClearRepositories = () => {
+export const connectToTestDBAndClearRepositories = (
+  mockRateLimit?: boolean,
+) => {
   let app: NestExpressApplication;
 
   beforeAll(async () => {
     const DynamicAppModule = await initAppModule();
 
-    const moduleFixture: TestingModule = await Test.createTestingModule({
+    const moduleBuilder: TestingModuleBuilder = Test.createTestingModule({
       imports: [DynamicAppModule],
     })
       .overrideProvider(EmailService)
-      .useClass(EmailServiceMock)
-      .compile();
+      .useClass(EmailServiceMock);
+
+    if (mockRateLimit) {
+      moduleBuilder.overrideGuard(RateLimitGuard).useValue(RateLimitMock);
+    }
+
+    const moduleFixture = await moduleBuilder.compile();
 
     app = moduleFixture.createNestApplication({ logger: false });
     // const coreConfig = app.get<CoreConfig>(CoreConfig);

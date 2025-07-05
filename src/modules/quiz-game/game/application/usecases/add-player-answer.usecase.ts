@@ -96,10 +96,13 @@ export class AddPlayerAnswerCommandHandler
       newScore += 1;
     }
 
-    // Last answer for current player and another player does not answer to all questions yet
+    const isLastAnswer =
+      currentPlayer?.answers?.length === GAME_QUESTIONS_COUNT - 1;
+    // Add additional point if current player answered faster to all questions and has min 1 point already
     if (
-      currentPlayer?.answers?.length === GAME_QUESTIONS_COUNT - 1 &&
-      anotherPlayerAnswersCount < GAME_QUESTIONS_COUNT
+      isLastAnswer &&
+      anotherPlayerAnswersCount < GAME_QUESTIONS_COUNT &&
+      newScore > 0
     ) {
       newScore += 1;
     }
@@ -108,10 +111,7 @@ export class AddPlayerAnswerCommandHandler
     await this.playersRepository.save_player_typeorm(currentPlayerForUpdate!);
 
     // Finish game if both players answer to all questions
-    if (
-      currentPlayer?.answers?.length === GAME_QUESTIONS_COUNT - 1 &&
-      anotherPlayerAnswersCount === GAME_QUESTIONS_COUNT
-    ) {
+    if (isLastAnswer && anotherPlayerAnswersCount === GAME_QUESTIONS_COUNT) {
       const game = await this.gamesRepository.getActiveGameIdByUserId(userId);
 
       game!.finishGameDate = new Date().toISOString();

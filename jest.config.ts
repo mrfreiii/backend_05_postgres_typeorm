@@ -5,7 +5,7 @@ const config: Config = {
   rootDir: ".",
   testEnvironment: "node",
   testRegex: ".e2e.test.ts$",
-  testTimeout: 60000,
+  testTimeout: 120000,
   transform: {
     "^.+\\.(t|j)s$": "ts-jest",
   },

@@ -15,7 +15,7 @@ export const createTestUsers = async ({
   const result: UserViewDtoPg[] = [];
 
   for (let i = 0; i < count; i++) {
-    const uniqueId = Number(Date.now()).toString().substring(8);
+    const uniqueId = Number(Date.now()).toString().substring(9);
 
     const user: CreateUserInputDto = {
       login: `user${i + 1}${uniqueId}`,
