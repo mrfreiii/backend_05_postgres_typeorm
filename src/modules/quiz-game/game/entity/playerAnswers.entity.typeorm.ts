@@ -32,6 +32,6 @@ export class PlayerAnswers {
   @Column()
   status: string; // Correct, Incorrect
 
-  @CreateDateColumn()
+  @Column()
   addedAt: string;
 }

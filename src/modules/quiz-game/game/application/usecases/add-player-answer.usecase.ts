@@ -77,6 +77,7 @@ export class AddPlayerAnswerCommandHandler
     const newAnswer = this.playerAnswersEntity.create({
       playerId: currentPlayer.id,
       questionId: currentQuestion?.questionId,
+      addedAt: new Date().toISOString(),
       status: isCurrentAnswerCorrect
         ? AnswerStatusEnum.Correct
         : AnswerStatusEnum.Incorrect,
