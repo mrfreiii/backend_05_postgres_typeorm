@@ -2,7 +2,6 @@ import {
   Column,
   Entity,
   CreateDateColumn,
-  UpdateDateColumn,
   DeleteDateColumn,
   PrimaryGeneratedColumn,
 } from "typeorm";
@@ -29,7 +28,7 @@ export class Question {
   @CreateDateColumn()
   createdAt: string;
 
-  @UpdateDateColumn()
+  @Column({ default: null })
   updatedAt: string;
 
   @DeleteDateColumn()

@@ -18,6 +18,7 @@ export class UpdatePublishedStatusCommandHandler
       await this.questionsRepository.findOrNotFoundFail_typeorm(questionId);
 
     question.published = published;
+    question.updatedAt = new Date().toISOString();
 
     await this.questionsRepository.save_question_typeorm(question);
   }

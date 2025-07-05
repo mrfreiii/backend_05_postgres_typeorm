@@ -22,6 +22,7 @@ export class UpdateQuestionCommandHandler
 
     question.body = inputData.body;
     question.correctAnswers = inputData.correctAnswers;
+    question.updatedAt = new Date().toISOString();
 
     await this.questionsRepository.save_question_typeorm(question);
   }

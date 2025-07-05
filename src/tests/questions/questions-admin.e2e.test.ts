@@ -65,7 +65,7 @@ describe("create question /sa/quiz/questions", () => {
       id: expect.any(String),
       published: false,
       createdAt: expect.any(String),
-      updatedAt: expect.any(String),
+      updatedAt: null,
     });
   });
 });
