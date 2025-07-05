@@ -129,7 +129,7 @@ describe("update question /sa/quiz/questions/:id", () => {
 
     const updatedQuestion: UpdateQuestionInputDto = {
       body: "updated question",
-      correctAnswers: ["updated answer 1", "updated answer 2"],
+      correctAnswers: ["correct answer 1 updated, correct answer 2 updated"],
     };
 
     await req
