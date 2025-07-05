@@ -61,8 +61,8 @@ export class GamesController {
     if (gameId === "my-current") {
       const res = await this.gamesRepository.getActiveGameIdByUserId(user?.id);
       if (
-        !res ||
-        res?.status === (GameStatusEnum.PendingSecondPlayer as string)
+        !res
+        // || res?.status === (GameStatusEnum.PendingSecondPlayer as string)
       ) {
         throw new DomainException({
           code: DomainExceptionCode.NotFound,
