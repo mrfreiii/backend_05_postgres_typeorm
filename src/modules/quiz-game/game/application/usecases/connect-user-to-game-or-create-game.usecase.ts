@@ -7,6 +7,7 @@ import { GamesRepository } from "../../infrastructure/games.repository";
 import { PlayersRepository } from "../../infrastructure/players.repository";
 import { DomainException } from "../../../../../core/exceptions/domain-exceptions";
 import { DomainExceptionCode } from "../../../../../core/exceptions/domain-exception-codes";
+import { GameStatusEnum } from "../../enums/gameStatus.enum";
 
 export class ConnectUserToGameOrCreateGameCommand {
   constructor(public userId: string) {}
@@ -30,16 +31,21 @@ export class ConnectUserToGameOrCreateGameCommandHandler
       await this.gamesRepository.getActiveGameIdByUserId(userId);
 
     if (existentUserGame) {
-      throw new DomainException({
-        code: DomainExceptionCode.Forbidden,
-        message: "User already have a game",
-        extensions: [
-          {
-            field: "",
+      switch (existentUserGame.status as GameStatusEnum) {
+        case GameStatusEnum.Active:
+          throw new DomainException({
+            code: DomainExceptionCode.Forbidden,
             message: "User already have a game",
-          },
-        ],
-      });
+            extensions: [
+              {
+                field: "",
+                message: "User already have a game",
+              },
+            ],
+          });
+        case GameStatusEnum.PendingSecondPlayer:
+          return existentUserGame.id;
+      }
     }
 
     const newPlayer = this.playerEntity.create({

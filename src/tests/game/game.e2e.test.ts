@@ -52,15 +52,25 @@ describe("connects to game (sequential requests) /connection", () => {
     });
   });
 
-  it("should return 403 because user already have an active game", async () => {
+  it("should return a game again after second attempt to connect because 2nd player does not connected yet", async () => {
     const res = await req
       .post(`${SETTINGS.PATH.GAMES}/connection`)
       .set("Authorization", `Bearer ${user1Token}`)
-      .expect(403);
+      .expect(200);
 
-    expect(res.body.errorsMessages[0]).toEqual({
-      field: "",
-      message: "User already have a game",
+    expect(res.body).toEqual({
+      id: expect.any(String),
+      firstPlayerProgress: {
+        answers: [],
+        player: { id: user1.id, login: user1.login },
+        score: 0,
+      },
+      secondPlayerProgress: null,
+      questions: null,
+      status: "PendingSecondPlayer",
+      pairCreatedDate: expect.any(String),
+      startGameDate: null,
+      finishGameDate: null,
     });
   });
 
@@ -93,6 +103,18 @@ describe("connects to game (sequential requests) /connection", () => {
       pairCreatedDate: expect.any(String),
       startGameDate: expect.any(String),
       finishGameDate: null,
+    });
+  });
+
+  it("should return 403 for attempt to connect when game is started ", async () => {
+    const res = await req
+      .post(`${SETTINGS.PATH.GAMES}/connection`)
+      .set("Authorization", `Bearer ${user1Token}`)
+      .expect(403);
+
+    expect(res.body.errorsMessages[0]).toEqual({
+      field: "",
+      message: "User already have a game",
     });
   });
 });
@@ -341,7 +363,7 @@ describe("get current active game for user /my-current", () => {
     await req.get(`${SETTINGS.PATH.GAMES}/my-current`).expect(401);
   });
 
-  it("should return 404 for no active game (not created)", async () => {
+  it("should return 404 for no active game (for 2nd player that is not connected yet)", async () => {
     const res = await req
       .get(`${SETTINGS.PATH.GAMES}/my-current`)
       .set("Authorization", `Bearer ${user2Token}`)
@@ -353,19 +375,14 @@ describe("get current active game for user /my-current", () => {
     });
   });
 
-  it("should return 404 for no active game (awaiting second player)", async () => {
-    const res = await req
+  it("should return game (awaiting second player)", async () => {
+    await req
       .get(`${SETTINGS.PATH.GAMES}/my-current`)
       .set("Authorization", `Bearer ${user1Token}`)
-      .expect(404);
-
-    expect(res.body.errorsMessages[0]).toEqual({
-      field: "",
-      message: "There is no active game for current user",
-    });
+      .expect(200);
   });
 
-  it("should return game", async () => {
+  it("should return game (second player connected)", async () => {
     // Connect 2nd player
     const gameRes = await req
       .post(`${SETTINGS.PATH.GAMES}/connection`)
@@ -475,6 +492,18 @@ describe("get current active game for user /my-current", () => {
       .get(`${SETTINGS.PATH.GAMES}/my-current`)
       .set("Authorization", `Bearer ${user1Token}`)
       .expect(404);
+  });
+
+  it("should return a new game for 1st player", async () => {
+    await req
+      .post(`${SETTINGS.PATH.GAMES}/connection`)
+      .set("Authorization", `Bearer ${user1Token}`)
+      .expect(200);
+
+    await req
+      .get(`${SETTINGS.PATH.GAMES}/my-current`)
+      .set("Authorization", `Bearer ${user1Token}`)
+      .expect(200);
   });
 });
 

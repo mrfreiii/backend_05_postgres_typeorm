@@ -26,7 +26,6 @@ import { AddPlayerAnswerInputDto } from "./input-dto/add-player-answer.input-dto
 import { PlayerAnswerViewDtoTypeorm } from "./view-dto/playerAnswer.view-dto.pg.ts";
 import { PlayerAnswersQueryRepository } from "../infrastructure/query/playerAnswers.query-repository";
 import { validate as isValidUUID } from "uuid";
-import { GameStatusEnum } from "../enums/gameStatus.enum";
 
 @Controller(SETTINGS.PATH.GAMES)
 @UseGuards(JwtAuthGuard)
