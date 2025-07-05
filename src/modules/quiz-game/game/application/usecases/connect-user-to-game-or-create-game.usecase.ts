@@ -31,21 +31,16 @@ export class ConnectUserToGameOrCreateGameCommandHandler
       await this.gamesRepository.getActiveGameIdByUserId(userId);
 
     if (existentUserGame) {
-      switch (existentUserGame.status as GameStatusEnum) {
-        case GameStatusEnum.Active:
-          throw new DomainException({
-            code: DomainExceptionCode.Forbidden,
+      throw new DomainException({
+        code: DomainExceptionCode.Forbidden,
+        message: "User already have a game",
+        extensions: [
+          {
+            field: "",
             message: "User already have a game",
-            extensions: [
-              {
-                field: "",
-                message: "User already have a game",
-              },
-            ],
-          });
-        case GameStatusEnum.PendingSecondPlayer:
-          return existentUserGame.id;
-      }
+          },
+        ],
+      });
     }
 
     const newPlayer = this.playerEntity.create({

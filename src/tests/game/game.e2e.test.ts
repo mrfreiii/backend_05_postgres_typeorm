@@ -52,28 +52,6 @@ describe("connects to game (sequential requests) /connection", () => {
     });
   });
 
-  it("should return a game again after second attempt to connect because 2nd player does not connected yet", async () => {
-    const res = await req
-      .post(`${SETTINGS.PATH.GAMES}/connection`)
-      .set("Authorization", `Bearer ${user1Token}`)
-      .expect(200);
-
-    expect(res.body).toEqual({
-      id: expect.any(String),
-      firstPlayerProgress: {
-        answers: [],
-        player: { id: user1.id, login: user1.login },
-        score: 0,
-      },
-      secondPlayerProgress: null,
-      questions: null,
-      status: "PendingSecondPlayer",
-      pairCreatedDate: expect.any(String),
-      startGameDate: null,
-      finishGameDate: null,
-    });
-  });
-
   it("should return an active game with second player", async () => {
     const res = await req
       .post(`${SETTINGS.PATH.GAMES}/connection`)
