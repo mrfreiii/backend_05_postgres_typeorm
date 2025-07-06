@@ -42,16 +42,20 @@ export class GamesRepository {
   }
 
   async getActiveGameIdByUserId(userId: string): Promise<Game | null> {
+    const query = `
+        SELECT g.id, g.status, g."finishGameDate"
+         FROM game g
+         LEFT JOIN player p1
+            ON g."firstPlayerId" = p1.id
+         LEFT JOIN player p2
+            ON g."secondPlayerId" = p2.id
+         WHERE (p1."userId" = $1 OR p2."userId" = $1)
+            AND g."finishGameDate" IS NULL
+    `;
+
     try {
-      return this.gameEntity
-        .createQueryBuilder("g")
-        .leftJoin("g.firstPlayer", "fp")
-        .leftJoin("g.secondPlayer", "sp")
-        .select("g.id")
-        .addSelect("g.status")
-        .where("g.finishGameDate IS NULL")
-        .andWhere("fp.userId = :userId OR sp.userId = :userId", { userId })
-        .getOne();
+      const res = await this.dataSource.query(query, [userId]);
+      return res?.[0];
     } catch (e) {
       console.log(e);
       throw new DomainException({

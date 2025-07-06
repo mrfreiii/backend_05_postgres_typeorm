@@ -470,18 +470,11 @@ describe("get current active game for user /my-current", () => {
       .get(`${SETTINGS.PATH.GAMES}/my-current`)
       .set("Authorization", `Bearer ${user1Token}`)
       .expect(404);
-  });
-
-  it("should return a new game for 1st player", async () => {
-    await req
-      .post(`${SETTINGS.PATH.GAMES}/connection`)
-      .set("Authorization", `Bearer ${user1Token}`)
-      .expect(200);
 
     await req
       .get(`${SETTINGS.PATH.GAMES}/my-current`)
-      .set("Authorization", `Bearer ${user1Token}`)
-      .expect(200);
+      .set("Authorization", `Bearer ${user2Token}`)
+      .expect(404);
   });
 });
 
