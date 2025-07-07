@@ -7,7 +7,7 @@ import { GamesRepository } from "../../infrastructure/games.repository";
 import { PlayersRepository } from "../../infrastructure/players.repository";
 import { DomainException } from "../../../../../core/exceptions/domain-exceptions";
 import { DomainExceptionCode } from "../../../../../core/exceptions/domain-exception-codes";
-import { GameStatusEnum } from "../../enums/gameStatus.enum";
+import { GAME_QUESTIONS_COUNT } from "../../entity/game.entity.typeorm";
 
 export class ConnectUserToGameOrCreateGameCommand {
   constructor(public userId: string) {}
@@ -27,10 +27,16 @@ export class ConnectUserToGameOrCreateGameCommandHandler
     userId,
   }: ConnectUserToGameOrCreateGameCommand): Promise<string> {
     // Checking if user already have a game
-    const existentUserGame =
-      await this.gamesRepository.getActiveGameIdByUserId(userId);
+    // const existentUserGame =
+    //   await this.gamesRepository.getActiveGameIdByUserId(userId);
+    const players = await this.gamesRepository.getPlayerByUserId(userId);
+    const { currentPlayer } = players || {};
 
-    if (existentUserGame) {
+    // if (existentUserGame) {
+    if (
+      currentPlayer &&
+      currentPlayer?.answers?.length < GAME_QUESTIONS_COUNT
+    ) {
       throw new DomainException({
         code: DomainExceptionCode.Forbidden,
         message: "User already have a game",
