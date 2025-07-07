@@ -85,12 +85,20 @@ describe("connects to game (sequential requests) /connection", () => {
   });
 
   it("should return 403 for attempt to connect when game is started ", async () => {
-    const res = await req
+    const user1Res = await req
       .post(`${SETTINGS.PATH.GAMES}/connection`)
       .set("Authorization", `Bearer ${user1Token}`)
       .expect(403);
+    const user2Res = await req
+      .post(`${SETTINGS.PATH.GAMES}/connection`)
+      .set("Authorization", `Bearer ${user2Token}`)
+      .expect(403);
 
-    expect(res.body.errorsMessages[0]).toEqual({
+    expect(user1Res.body.errorsMessages[0]).toEqual({
+      field: "",
+      message: "User already have a game",
+    });
+    expect(user2Res.body.errorsMessages[0]).toEqual({
       field: "",
       message: "User already have a game",
     });
@@ -487,6 +495,7 @@ describe("send answer to questions (only 1st player answers) /my-current/answers
   let user2Token: string;
 
   let game1: GameViewDtoTypeorm;
+  let questionsWithAnswers: QuestionViewDto[];
 
   beforeAll(async () => {
     const users = await createTestUsers({ count: 3 });
@@ -497,7 +506,7 @@ describe("send answer to questions (only 1st player answers) /my-current/answers
     user1Token = tokens[0];
     user2Token = tokens[1];
 
-    await createTestPublishedQuestions(5);
+    questionsWithAnswers = await createTestPublishedQuestions(5);
 
     // connect 1s user to game
     await req
@@ -623,6 +632,119 @@ describe("send answer to questions (only 1st player answers) /my-current/answers
     expect(res.body.errorsMessages[0]).toEqual({
       field: "",
       message: "User already answer to all questions",
+    });
+  });
+
+  it("should return 1 score for 2nd player with 1 correct answer", async () => {
+    const correctAnswerForFirstQuestion = questionsWithAnswers.find((qwa) => {
+      return qwa.id === game1?.questions?.[0].id;
+    })?.correctAnswers[0];
+
+    // answer #1
+    await req
+      .post(`${SETTINGS.PATH.GAMES}/my-current/answers`)
+      .set("Authorization", `Bearer ${user2Token}`)
+      .send({ answer: correctAnswerForFirstQuestion })
+      .expect(200);
+    // answer #2
+    await req
+      .post(`${SETTINGS.PATH.GAMES}/my-current/answers`)
+      .set("Authorization", `Bearer ${user2Token}`)
+      .send({ answer: "incorrect answer" })
+      .expect(200);
+    // answer #3
+    await req
+      .post(`${SETTINGS.PATH.GAMES}/my-current/answers`)
+      .set("Authorization", `Bearer ${user2Token}`)
+      .send({ answer: "incorrect answer" })
+      .expect(200);
+    // answer #4
+    await req
+      .post(`${SETTINGS.PATH.GAMES}/my-current/answers`)
+      .set("Authorization", `Bearer ${user2Token}`)
+      .send({ answer: "incorrect answer" })
+      .expect(200);
+    // answer #5
+    await req
+      .post(`${SETTINGS.PATH.GAMES}/my-current/answers`)
+      .set("Authorization", `Bearer ${user2Token}`)
+      .send({ answer: "incorrect answer" })
+      .expect(200);
+
+    const checkRes = await req
+      .get(`${SETTINGS.PATH.GAMES}/${game1.id}`)
+      .set("Authorization", `Bearer ${user2Token}`)
+      .expect(200);
+
+    expect(checkRes.body).toEqual({
+      id: game1.id,
+      firstPlayerProgress: {
+        answers: [
+          {
+            questionId: game1?.questions?.[0].id,
+            answerStatus: "Incorrect",
+            addedAt: expect.any(String),
+          },
+          {
+            questionId: game1?.questions?.[1].id,
+            answerStatus: "Incorrect",
+            addedAt: expect.any(String),
+          },
+          {
+            questionId: game1?.questions?.[2].id,
+            answerStatus: "Incorrect",
+            addedAt: expect.any(String),
+          },
+          {
+            questionId: game1?.questions?.[3].id,
+            answerStatus: "Incorrect",
+            addedAt: expect.any(String),
+          },
+          {
+            questionId: game1?.questions?.[4].id,
+            answerStatus: "Incorrect",
+            addedAt: expect.any(String),
+          },
+        ],
+        player: { id: user1.id, login: user1.login },
+        score: 0,
+      },
+      secondPlayerProgress: {
+        answers: [
+          {
+            questionId: game1?.questions?.[0].id,
+            answerStatus: "Correct",
+            addedAt: expect.any(String),
+          },
+          {
+            questionId: game1?.questions?.[1].id,
+            answerStatus: "Incorrect",
+            addedAt: expect.any(String),
+          },
+          {
+            questionId: game1?.questions?.[2].id,
+            answerStatus: "Incorrect",
+            addedAt: expect.any(String),
+          },
+          {
+            questionId: game1?.questions?.[3].id,
+            answerStatus: "Incorrect",
+            addedAt: expect.any(String),
+          },
+          {
+            questionId: game1?.questions?.[4].id,
+            answerStatus: "Incorrect",
+            addedAt: expect.any(String),
+          },
+        ],
+        player: { id: user2.id, login: user2.login },
+        score: 1,
+      },
+      questions: game1?.questions,
+      status: "Active",
+      pairCreatedDate: expect.any(String),
+      startGameDate: expect.any(String),
+      finishGameDate: expect.any(String),
     });
   });
 });
@@ -979,5 +1101,25 @@ describe("send answer to questions (two players answer in parallel) /my-current/
 
     expect(totalScore).toBe(11);
     expect(checkRes.body.finishGameDate).toEqual(expect.any(String));
+
+    const lastAnswerDatePlayer1 =
+      checkRes.body.firstPlayerProgress.answers[4].addedAt;
+    const lastAnswerDatePlayer2 =
+      checkRes.body.secondPlayerProgress.answers[4].addedAt;
+
+    const timestampLastAnswerPlayer1 = new Date(
+      lastAnswerDatePlayer1,
+    ).getTime();
+    const timestampLastAnswerPlayer2 = new Date(
+      lastAnswerDatePlayer2,
+    ).getTime();
+
+    if (timestampLastAnswerPlayer1 < timestampLastAnswerPlayer2) {
+      expect(checkRes.body.firstPlayerProgress.score).toBe(6);
+      expect(checkRes.body.secondPlayerProgress.score).toBe(5);
+    } else {
+      expect(checkRes.body.firstPlayerProgress.score).toBe(5);
+      expect(checkRes.body.secondPlayerProgress.score).toBe(6);
+    }
   });
 });
