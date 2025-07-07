@@ -31,14 +31,15 @@ export class PlayerAnswersRepository {
     }
   }
 
-  async getAnotherPlayerAnswersCount_typeorm(
+  async getAnotherPlayerAnswers_typeorm(
     playerId: string,
-  ): Promise<number> {
+  ): Promise<PlayerAnswers[]> {
     try {
       return this.playerAnswersEntity
         .createQueryBuilder("pa")
         .where("pa.playerId = :playerId", { playerId })
-        .getCount();
+        .orderBy("pa.questionId", "DESC")
+        .getMany();
     } catch (e) {
       console.log(e);
       throw new DomainException({

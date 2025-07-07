@@ -87,8 +87,8 @@ export class AddPlayerAnswerCommandHandler
     // Calculating score
     const currentPlayerForUpdate =
       await this.playersRepository.getPlayerById_typeorm(currentPlayer.id);
-    const anotherPlayerAnswersCount =
-      await this.playerAnswersRepository.getAnotherPlayerAnswersCount_typeorm(
+    const anotherPlayerAnswers =
+      await this.playerAnswersRepository.getAnotherPlayerAnswers_typeorm(
         anotherPlayerId,
       );
 
@@ -102,7 +102,11 @@ export class AddPlayerAnswerCommandHandler
     // Add additional point if current player answered faster to all questions and has min 1 point already
     if (
       isLastAnswer &&
-      anotherPlayerAnswersCount < GAME_QUESTIONS_COUNT &&
+      (anotherPlayerAnswers.length < GAME_QUESTIONS_COUNT ||
+        (anotherPlayerAnswers.length === GAME_QUESTIONS_COUNT &&
+          new Date(
+            anotherPlayerAnswers[GAME_QUESTIONS_COUNT - 1].addedAt,
+          ).getTime() > new Date(newAnswer.addedAt).getTime())) &&
       newScore > 0
     ) {
       newScore += 1;
@@ -112,7 +116,7 @@ export class AddPlayerAnswerCommandHandler
     await this.playersRepository.save_player_typeorm(currentPlayerForUpdate!);
 
     // Finish game if both players answer to all questions
-    if (isLastAnswer && anotherPlayerAnswersCount === GAME_QUESTIONS_COUNT) {
+    if (isLastAnswer && anotherPlayerAnswers.length === GAME_QUESTIONS_COUNT) {
       const game = await this.gamesRepository.getActiveGameIdByUserId(userId);
 
       game!.finishGameDate = new Date().toISOString();
