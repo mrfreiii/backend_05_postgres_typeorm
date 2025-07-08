@@ -2,6 +2,7 @@ import { SETTINGS } from "../../settings";
 import { createTestPublishedQuestions } from "../questions/helpers";
 import { createTestUsers, getUsersJwtTokens } from "../users/helpers";
 import { connectToTestDBAndClearRepositories, req } from "../helpers";
+import { GameStatusEnum } from "../../modules/quiz-game/game/enums/gameStatus.enum";
 import { GameViewDtoTypeorm } from "../../modules/quiz-game/game/api/view-dto/game.view-dto.pg";
 import { UserViewDtoPg } from "../../modules/user-accounts/users/api/view-dto/users.view-dto.pg";
 import { QuestionViewDto } from "../../modules/quiz-game/questions/api/view-dto/questions.view-dto";
@@ -101,6 +102,114 @@ describe("connects to game (sequential requests) /connection", () => {
     expect(user2Res.body.errorsMessages[0]).toEqual({
       field: "",
       message: "User already have a game",
+    });
+  });
+
+  it("should return 403 for attempt to connect when after 1st player answered to all questions but 2nd not yet", async () => {
+    await req // 1st question
+      .post(`${SETTINGS.PATH.GAMES}/my-current/answers`)
+      .set("Authorization", `Bearer ${user1Token}`)
+      .send({ answer: "incorrect answer" })
+      .expect(200);
+    await req // 2nd question
+      .post(`${SETTINGS.PATH.GAMES}/my-current/answers`)
+      .set("Authorization", `Bearer ${user1Token}`)
+      .send({ answer: "incorrect answer" })
+      .expect(200);
+    await req // 3rd question
+      .post(`${SETTINGS.PATH.GAMES}/my-current/answers`)
+      .set("Authorization", `Bearer ${user1Token}`)
+      .send({ answer: "incorrect answer" })
+      .expect(200);
+    await req // 4th question
+      .post(`${SETTINGS.PATH.GAMES}/my-current/answers`)
+      .set("Authorization", `Bearer ${user1Token}`)
+      .send({ answer: "incorrect answer" })
+      .expect(200);
+    await req // 5th question
+      .post(`${SETTINGS.PATH.GAMES}/my-current/answers`)
+      .set("Authorization", `Bearer ${user1Token}`)
+      .send({ answer: "incorrect answer" })
+      .expect(200);
+
+    const user1Res = await req
+      .post(`${SETTINGS.PATH.GAMES}/connection`)
+      .set("Authorization", `Bearer ${user1Token}`)
+      .expect(403);
+    const user2Res = await req
+      .post(`${SETTINGS.PATH.GAMES}/connection`)
+      .set("Authorization", `Bearer ${user2Token}`)
+      .expect(403);
+
+    expect(user1Res.body.errorsMessages[0]).toEqual({
+      field: "",
+      message: "User already have a game",
+    });
+    expect(user2Res.body.errorsMessages[0]).toEqual({
+      field: "",
+      message: "User already have a game",
+    });
+  });
+
+  it("should connect users to new game after 2nd player answered to all questions", async () => {
+    await req // 1st question
+      .post(`${SETTINGS.PATH.GAMES}/my-current/answers`)
+      .set("Authorization", `Bearer ${user2Token}`)
+      .send({ answer: "incorrect answer" })
+      .expect(200);
+    await req // 2nd question
+      .post(`${SETTINGS.PATH.GAMES}/my-current/answers`)
+      .set("Authorization", `Bearer ${user2Token}`)
+      .send({ answer: "incorrect answer" })
+      .expect(200);
+    await req // 3rd question
+      .post(`${SETTINGS.PATH.GAMES}/my-current/answers`)
+      .set("Authorization", `Bearer ${user2Token}`)
+      .send({ answer: "incorrect answer" })
+      .expect(200);
+    await req // 4th question
+      .post(`${SETTINGS.PATH.GAMES}/my-current/answers`)
+      .set("Authorization", `Bearer ${user2Token}`)
+      .send({ answer: "incorrect answer" })
+      .expect(200);
+    await req // 5th question
+      .post(`${SETTINGS.PATH.GAMES}/my-current/answers`)
+      .set("Authorization", `Bearer ${user2Token}`)
+      .send({ answer: "incorrect answer" })
+      .expect(200);
+
+    await req
+      .post(`${SETTINGS.PATH.GAMES}/connection`)
+      .set("Authorization", `Bearer ${user2Token}`)
+      .expect(200);
+    const res = await req
+      .post(`${SETTINGS.PATH.GAMES}/connection`)
+      .set("Authorization", `Bearer ${user1Token}`)
+      .expect(200);
+
+    expect(res.body).toEqual({
+      id: expect.any(String),
+      firstPlayerProgress: {
+        answers: [],
+        player: { id: user2.id, login: user2.login },
+        score: 0,
+      },
+      secondPlayerProgress: {
+        answers: [],
+        player: { id: user1.id, login: user1.login },
+        score: 0,
+      },
+      questions: [
+        { id: expect.any(String), body: expect.any(String) },
+        { id: expect.any(String), body: expect.any(String) },
+        { id: expect.any(String), body: expect.any(String) },
+        { id: expect.any(String), body: expect.any(String) },
+        { id: expect.any(String), body: expect.any(String) },
+      ],
+      status: "Active",
+      pairCreatedDate: expect.any(String),
+      startGameDate: expect.any(String),
+      finishGameDate: null,
     });
   });
 });
@@ -741,7 +850,7 @@ describe("send answer to questions (only 1st player answers) /my-current/answers
         score: 1,
       },
       questions: game1?.questions,
-      status: "Active",
+      status: GameStatusEnum.Finished,
       pairCreatedDate: expect.any(String),
       startGameDate: expect.any(String),
       finishGameDate: expect.any(String),
@@ -788,7 +897,7 @@ describe("send answer to questions (two players answer sequentially) /my-current
     })?.correctAnswers[0];
   });
 
-  it("should return 2 score for one correct answer and other incorrect but finished first", async () => {
+  it("should return 1 score for one correct answer and other incorrect", async () => {
     // answer #1
     await req
       .post(`${SETTINGS.PATH.GAMES}/my-current/answers`)
@@ -856,7 +965,7 @@ describe("send answer to questions (two players answer sequentially) /my-current
           },
         ],
         player: { id: user1.id, login: user1.login },
-        score: 2,
+        score: 1,
       },
       secondPlayerProgress: {
         answers: [],
@@ -871,7 +980,7 @@ describe("send answer to questions (two players answer sequentially) /my-current
     });
   });
 
-  it("should finish game after 2nd player answers to all questions", async () => {
+  it("should finish game after 2nd player answers to all questions and add 1 score for 1st player due to finished first", async () => {
     // answer #1
     await req
       .post(`${SETTINGS.PATH.GAMES}/my-current/answers`)
@@ -973,7 +1082,7 @@ describe("send answer to questions (two players answer sequentially) /my-current
         score: 1,
       },
       questions: game1?.questions,
-      status: "Active",
+      status: GameStatusEnum.Finished,
       pairCreatedDate: expect.any(String),
       startGameDate: expect.any(String),
       finishGameDate: expect.any(String),

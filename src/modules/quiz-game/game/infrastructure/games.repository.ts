@@ -50,11 +50,14 @@ export class GamesRepository {
          LEFT JOIN player p2
             ON g."secondPlayerId" = p2.id
          WHERE (p1."userId" = $1 OR p2."userId" = $1)
-            AND g."finishGameDate" IS NULL
+            AND g."status" != $2
     `;
 
     try {
-      const res = await this.dataSource.query(query, [userId]);
+      const res = await this.dataSource.query(query, [
+        userId,
+        GameStatusEnum.Finished,
+      ]);
       return res?.[0];
     } catch (e) {
       console.log(e);

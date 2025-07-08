@@ -10,6 +10,7 @@ import { PlayersRepository } from "../../infrastructure/players.repository";
 import { DomainException } from "../../../../../core/exceptions/domain-exceptions";
 import { PlayerAnswersRepository } from "../../infrastructure/playerAnswers.repository";
 import { DomainExceptionCode } from "../../../../../core/exceptions/domain-exception-codes";
+import { GameStatusEnum } from "../../enums/gameStatus.enum";
 
 export class AddPlayerAnswerCommand {
   constructor(public dto: { userId: string; playerAnswer: string }) {}
@@ -60,13 +61,13 @@ export class AddPlayerAnswerCommandHandler
     }
 
     // Finding current question
-    const gameQuestions =
+    const allGameQuestions =
       await this.gamesRepository.getGameQuestionsWithAnswersByPlayerId(
         currentPlayer.id,
       );
     const playerAnswersIds =
       currentPlayer.answers?.map((a) => a.questionId) || [];
-    const currentQuestion = gameQuestions?.questionsWithAnswers.find(
+    const currentQuestion = allGameQuestions?.questionsWithAnswers.find(
       (q) => !playerAnswersIds.includes(q.questionId),
     );
 
@@ -84,41 +85,47 @@ export class AddPlayerAnswerCommandHandler
     });
     await this.playerAnswersRepository.save_player_answer_typeorm(newAnswer);
 
-    // Calculating score
-    const currentPlayerForUpdate =
-      await this.playersRepository.getPlayerById_typeorm(currentPlayer.id);
+    // Add score for current player
+    if (isCurrentAnswerCorrect) {
+      const currentPlayerForUpdate =
+        await this.playersRepository.getPlayerById_typeorm(currentPlayer.id);
+
+      currentPlayerForUpdate!.score += 1;
+      await this.playersRepository.save_player_typeorm(currentPlayerForUpdate!);
+    }
+
+    // Add additional score for other player if all players answered to all questions,
+    // and he answered the fastest and had score > 0
+    const anotherPlayerForUpdate =
+      await this.playersRepository.getPlayerById_typeorm(anotherPlayerId);
     const anotherPlayerAnswers =
       await this.playerAnswersRepository.getAnotherPlayerAnswers_typeorm(
         anotherPlayerId,
       );
 
-    let newScore = currentPlayerForUpdate?.score || 0;
-    if (isCurrentAnswerCorrect) {
-      newScore += 1;
-    }
+    const isAllPlayersAnsweredToAllQuestions =
+      currentPlayer?.answers?.length === GAME_QUESTIONS_COUNT - 1 &&
+      anotherPlayerAnswers?.length === GAME_QUESTIONS_COUNT;
+    const isAnotherPlayerAnsweredFastest =
+      anotherPlayerAnswers?.length === GAME_QUESTIONS_COUNT &&
+      new Date(
+        anotherPlayerAnswers?.[GAME_QUESTIONS_COUNT - 1]?.addedAt,
+      )?.getTime() < new Date(newAnswer.addedAt).getTime();
 
-    const isLastAnswer =
-      currentPlayer?.answers?.length === GAME_QUESTIONS_COUNT - 1;
-    // Add additional point if current player answered faster to all questions and has min 1 point already
     if (
-      isLastAnswer &&
-      (anotherPlayerAnswers.length < GAME_QUESTIONS_COUNT ||
-        (anotherPlayerAnswers.length === GAME_QUESTIONS_COUNT &&
-          new Date(
-            anotherPlayerAnswers[GAME_QUESTIONS_COUNT - 1].addedAt,
-          ).getTime() > new Date(newAnswer.addedAt).getTime())) &&
-      newScore > 0
+      isAllPlayersAnsweredToAllQuestions &&
+      isAnotherPlayerAnsweredFastest &&
+      anotherPlayerForUpdate!.score > 0
     ) {
-      newScore += 1;
+      anotherPlayerForUpdate!.score += 1;
+      await this.playersRepository.save_player_typeorm(anotherPlayerForUpdate!);
     }
-
-    currentPlayerForUpdate!.score = newScore;
-    await this.playersRepository.save_player_typeorm(currentPlayerForUpdate!);
 
     // Finish game if both players answer to all questions
-    if (isLastAnswer && anotherPlayerAnswers.length === GAME_QUESTIONS_COUNT) {
+    if (isAllPlayersAnsweredToAllQuestions) {
       const game = await this.gamesRepository.getActiveGameIdByUserId(userId);
 
+      game!.status = GameStatusEnum.Finished;
       game!.finishGameDate = new Date().toISOString();
       await this.gamesRepository.save_game_typeorm(game!);
     }
