@@ -30,7 +30,8 @@ export class ConnectUserToGameOrCreateGameCommandHandler
       await this.gamesRepository.getActiveGameIdByUserId(userId);
     if (existentUserGame) {
       throw new DomainException({
-        code: DomainExceptionCode.Forbidden,
+        // TODO: replace to DomainExceptionCode.Forbidden
+        code: DomainExceptionCode.InternalServerError,
         message: "User already have a game",
         extensions: [
           {

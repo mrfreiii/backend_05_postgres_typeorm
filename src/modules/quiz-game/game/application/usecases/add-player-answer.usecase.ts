@@ -36,7 +36,8 @@ export class AddPlayerAnswerCommandHandler
 
     if (!currentPlayer || !anotherPlayerId) {
       throw new DomainException({
-        code: DomainExceptionCode.Forbidden,
+        // TODO: replace to DomainExceptionCode.Forbidden
+        code: DomainExceptionCode.TooManyRequests,
         message: "There is no active game for current user",
         extensions: [
           {
@@ -49,7 +50,8 @@ export class AddPlayerAnswerCommandHandler
 
     if (currentPlayer?.answers?.length === GAME_QUESTIONS_COUNT) {
       throw new DomainException({
-        code: DomainExceptionCode.Forbidden,
+        // TODO: replace to DomainExceptionCode.Forbidden
+        code: DomainExceptionCode.NotFound,
         message: "User already answer to all questions",
         extensions: [
           {
