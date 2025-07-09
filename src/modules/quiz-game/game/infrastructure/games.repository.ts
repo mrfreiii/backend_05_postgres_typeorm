@@ -43,7 +43,7 @@ export class GamesRepository {
 
   async getActiveGameIdByUserId(userId: string): Promise<Game | null> {
     const query = `
-        SELECT g.id, g.status, g."finishGameDate"
+        SELECT g.id
          FROM game g
          LEFT JOIN player p1
             ON g."firstPlayerId" = p1.id
@@ -226,6 +226,37 @@ export class GamesRepository {
 
       // Connection Player to existing game
       if (gameWithFirstPlayer) {
+        // Getting random questions for new game
+        const availableQuestionIds = await this.questionEntity.find({
+          where: { published: true },
+          select: { id: true },
+        });
+        if (availableQuestionIds.length < GAME_QUESTIONS_COUNT) {
+          throw new DomainException({
+            code: DomainExceptionCode.Forbidden,
+            message: `There is no enough published question in db for creating a game (need min ${GAME_QUESTIONS_COUNT})`,
+            extensions: [
+              {
+                field: "",
+                message: `There is no enough published question in db for creating a game (need min ${GAME_QUESTIONS_COUNT})`,
+              },
+            ],
+          });
+        }
+
+        const fiveRandomQuestionIndexes = getRandomNumbersFromRange({
+          count: 5,
+          max: availableQuestionIds.length,
+        });
+        for (let i = 0; i < fiveRandomQuestionIndexes.length; i++) {
+          const newGameQuestion = gameQuestionEntityWithQR.create({
+            gameId: gameWithFirstPlayer.id,
+            questionId: availableQuestionIds[fiveRandomQuestionIndexes[i]].id,
+          });
+          await gameQuestionEntityWithQR.save(newGameQuestion);
+        }
+
+        // Add 2nd player to the game
         gameWithFirstPlayer.secondPlayerId = newPlayerId;
         gameWithFirstPlayer.status = GameStatusEnum.Active;
         gameWithFirstPlayer.startGameDate = new Date().toISOString();
@@ -242,36 +273,6 @@ export class GamesRepository {
         status: GameStatusEnum.PendingSecondPlayer,
       });
       await gameEntityWithQR.save(newGame);
-
-      // Getting random questions for new game
-      const availableQuestionIds = await this.questionEntity.find({
-        where: { published: true },
-        select: { id: true },
-      });
-      if (availableQuestionIds.length < GAME_QUESTIONS_COUNT) {
-        throw new DomainException({
-          code: DomainExceptionCode.Forbidden,
-          message: `There is no enough published question in db for creating a game (need min ${GAME_QUESTIONS_COUNT})`,
-          extensions: [
-            {
-              field: "",
-              message: `There is no enough published question in db for creating a game (need min ${GAME_QUESTIONS_COUNT})`,
-            },
-          ],
-        });
-      }
-
-      const fiveRandomQuestionIndexes = getRandomNumbersFromRange({
-        count: 5,
-        max: availableQuestionIds.length,
-      });
-      for (let i = 0; i < fiveRandomQuestionIndexes.length; i++) {
-        const newGameQuestion = gameQuestionEntityWithQR.create({
-          gameId: newGame.id,
-          questionId: availableQuestionIds[fiveRandomQuestionIndexes[i]].id,
-        });
-        await gameQuestionEntityWithQR.save(newGameQuestion);
-      }
 
       // Second check if another user created another game while current user created this game
       const secondCheckGameWithFirstPlayer = await gameEntityWithQR.findOne({

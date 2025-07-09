@@ -125,9 +125,13 @@ export class AddPlayerAnswerCommandHandler
     if (isAllPlayersAnsweredToAllQuestions) {
       const game = await this.gamesRepository.getActiveGameIdByUserId(userId);
 
-      game!.status = GameStatusEnum.Finished;
-      game!.finishGameDate = new Date().toISOString();
-      await this.gamesRepository.save_game_typeorm(game!);
+      // In parallel answers the first player can finish game faster, then the 2nd player not need to finish game
+      if (game) {
+        game.status = GameStatusEnum.Finished;
+        game.finishGameDate = new Date().toISOString();
+
+        await this.gamesRepository.save_game_typeorm(game);
+      }
     }
 
     return newAnswer.id;
