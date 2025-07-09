@@ -34,7 +34,7 @@ export class AddPlayerAnswerCommandHandler
     const players = await this.gamesRepository.getPlayerByUserId(userId);
     const { currentPlayer, anotherPlayerId } = players || {};
 
-    if (!currentPlayer || !anotherPlayerId) {
+    if (!currentPlayer?.id || !anotherPlayerId) {
       throw new DomainException({
         code: DomainExceptionCode.Forbidden,
         message: "There is no active game for current user",
@@ -50,6 +50,8 @@ export class AddPlayerAnswerCommandHandler
     if (currentPlayer?.answers?.length === GAME_QUESTIONS_COUNT) {
       throw new DomainException({
         // TODO: replace to DomainExceptionCode.Forbidden
+        // тут что-то не так, или перепроверять возможные кейсы
+        // или квери билдер отрабатывает неверно
         code: DomainExceptionCode.NotFound,
         message: "User already answer to all questions",
         extensions: [
@@ -71,6 +73,18 @@ export class AddPlayerAnswerCommandHandler
     const currentQuestion = allGameQuestions?.questionsWithAnswers.find(
       (q) => !playerAnswersIds.includes(q.questionId),
     );
+    if (!currentQuestion?.questionId) {
+      throw new DomainException({
+        code: DomainExceptionCode.InternalServerError,
+        message: "Can not calculate current game question",
+        extensions: [
+          {
+            field: "",
+            message: "Can not calculate current game question",
+          },
+        ],
+      });
+    }
 
     // Checking answer and saving result
     const isCurrentAnswerCorrect =
@@ -78,7 +92,7 @@ export class AddPlayerAnswerCommandHandler
 
     const newAnswer = this.playerAnswersEntity.create({
       playerId: currentPlayer.id,
-      questionId: currentQuestion?.questionId,
+      questionId: currentQuestion.questionId,
       addedAt: new Date().toISOString(),
       status: isCurrentAnswerCorrect
         ? AnswerStatusEnum.Correct
