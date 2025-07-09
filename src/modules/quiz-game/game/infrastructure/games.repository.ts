@@ -233,8 +233,7 @@ export class GamesRepository {
         });
         if (availableQuestionIds.length < GAME_QUESTIONS_COUNT) {
           throw new DomainException({
-            // TODO: replace to DomainExceptionCode.Forbidden
-            code: DomainExceptionCode.Unauthorized,
+            code: DomainExceptionCode.Forbidden,
             message: `There is no enough published question in db for creating a game (need min ${GAME_QUESTIONS_COUNT})`,
             extensions: [
               {

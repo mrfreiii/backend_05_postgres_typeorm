@@ -101,8 +101,7 @@ export class GamesController {
 
     if (!players.includes(user.id)) {
       throw new DomainException({
-        // TODO: replace to DomainExceptionCode.Forbidden
-        code: DomainExceptionCode.BadRequest,
+        code: DomainExceptionCode.Forbidden,
         message: "The game does not belong to the user",
         extensions: [
           {

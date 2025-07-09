@@ -36,8 +36,7 @@ export class AddPlayerAnswerCommandHandler
 
     if (!currentPlayer || !anotherPlayerId) {
       throw new DomainException({
-        // TODO: replace to DomainExceptionCode.Forbidden
-        code: DomainExceptionCode.TooManyRequests,
+        code: DomainExceptionCode.Forbidden,
         message: "There is no active game for current user",
         extensions: [
           {
