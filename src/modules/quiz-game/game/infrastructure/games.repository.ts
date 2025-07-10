@@ -2,16 +2,14 @@ import { Injectable } from "@nestjs/common";
 import { Repository, DataSource, Not } from "typeorm";
 import { InjectDataSource, InjectRepository } from "@nestjs/typeorm";
 
-import { Game, GAME_QUESTIONS_COUNT } from "../entity/game.entity.typeorm";
 import { GameStatusEnum } from "../enums/gameStatus.enum";
 import { GameQuestion } from "../entity/gameQuestions.entity.typeorm";
+import { GetPlayerByUserIdType } from "./types/GetPlayerByUserIdType";
 import { Question } from "../../questions/entity/question.entity.typeorm";
+import { Game, GAME_QUESTIONS_COUNT } from "../entity/game.entity.typeorm";
 import { DomainException } from "../../../../core/exceptions/domain-exceptions";
 import { getRandomNumbersFromRange } from "../helpers/getRandomNumbersFromRange";
 import { DomainExceptionCode } from "../../../../core/exceptions/domain-exception-codes";
-import { PlayerAnswers } from "../entity/playerAnswers.entity.typeorm";
-import { Player } from "../entity/player.entity.typeorm";
-import { GetPlayerByUserIdType } from "./types/GetPlayerByUserIdType";
 import { GetGameQuestionsWithAnswersByPlayerId } from "./types/GetGameQuestionsWithAnswersByPlayerId";
 
 @Injectable()
@@ -19,7 +17,6 @@ export class GamesRepository {
   constructor(
     @InjectDataSource() private dataSource: DataSource,
     @InjectRepository(Game) private gameEntity: Repository<Game>,
-    @InjectRepository(Player) private playerEntity: Repository<Player>,
     @InjectRepository(Question) private questionEntity: Repository<Question>,
   ) {}
 
@@ -79,21 +76,44 @@ export class GamesRepository {
     anotherPlayerId: string;
   } | null> {
     try {
-      const players = await this.gameEntity
-        .createQueryBuilder("g")
-        .leftJoin("g.firstPlayer", "fp")
-        .leftJoin("g.secondPlayer", "sp")
-        .select([
-          'fp.id as "firstPlayerId"',
-          'fp."userId" as "firstPlayerUserId"',
-          'sp.id as "secondPlayerId"',
-          'sp."userId" as "secondPlayerUserId"',
-        ])
-        .where("fp.userId = :userId OR sp.userId = :userId", { userId })
-        .andWhere("g.finishGameDate IS NULL")
-        .andWhere("g.firstPlayerId IS NOT NULL")
-        .andWhere("g.secondPlayerId IS NOT NULL")
-        .getRawOne();
+      // Get players by query builder
+      // const players = await this.gameEntity
+      //   .createQueryBuilder("g")
+      //   .leftJoin("g.firstPlayer", "fp")
+      //   .leftJoin("g.secondPlayer", "sp")
+      //   .select([
+      //     'fp.id as "firstPlayerId"',
+      //     'fp."userId" as "firstPlayerUserId"',
+      //     'sp.id as "secondPlayerId"',
+      //     'sp."userId" as "secondPlayerUserId"',
+      //   ])
+      //   .where("fp.userId = :userId OR sp.userId = :userId", { userId })
+      //   .andWhere("g.finishGameDate IS NULL")
+      //   .andWhere("g.firstPlayerId IS NOT NULL")
+      //   .andWhere("g.secondPlayerId IS NOT NULL")
+      //   .getRawOne();
+      const playersQuery = `
+        SELECT 
+            p1.id as "firstPlayerId",
+            p1."userId" as "firstPlayerUserId",
+            p2.id as "secondPlayerId",
+            p2."userId" as "secondPlayerUserId"
+        FROM game g
+        LEFT JOIN player p1
+            ON g."firstPlayerId" = p1.id
+        LEFT JOIN player p2
+            ON g."secondPlayerId" = p2.id
+        WHERE (p1."userId" = $1 OR p2."userId" = $1)
+            AND g."status" = $2
+            AND p1.id IS NOT NULL
+            AND p2.id IS NOT NULL
+    `;
+
+      const playersRes = await this.dataSource.query(playersQuery, [
+        userId,
+        GameStatusEnum.Active,
+      ]);
+      const players = playersRes?.[0];
 
       let currentPlayerId = "";
       let anotherPlayerId = "";
@@ -111,30 +131,52 @@ export class GamesRepository {
         return null;
       }
 
-      const currentPlayer = await this.playerEntity
-        .createQueryBuilder("p")
-        .select(['p.id as "id"', 'p.score as "score"'])
-        .addSelect(
-          (sb) =>
-            sb
-              .select(
-                `jsonb_agg(
+      // Get current player by query builder
+      // const currentPlayer = await this.playerEntity
+      //   .createQueryBuilder("p")
+      //   .select(['p.id as "id"', 'p.score as "score"'])
+      //   .addSelect(
+      //     (sb) =>
+      //       sb
+      //         .select(
+      //           `jsonb_agg(
+      //                       json_build_object(
+      //                           'questionId', pa."questionId",
+      //                           'answerStatus', pa."status",
+      //                           'addedAt', pa."addedAt"
+      //                       )
+      //                    )`,
+      //         )
+      //         .from(PlayerAnswers, "pa")
+      //         .where('pa."playerId" = p.id'),
+      //     "answers",
+      //   )
+      //   .where("p.id = :playerId", { playerId: currentPlayerId })
+      //   .getRawOne();
+      const currentPlayerQuery = `
+        SELECT 
+            p.id,
+            p.score,
+            (
+                SELECT jsonb_agg(
                             json_build_object(
-                                'questionId', pa."questionId", 
-                                'answerStatus', pa."status", 
+                                'questionId', pa."questionId",
+                                'answerStatus', pa."status",
                                 'addedAt', pa."addedAt"
                             )
-                         )`,
-              )
-              .from(PlayerAnswers, "pa")
-              .where('pa."playerId" = p.id'),
-          "answers",
-        )
-        .where("p.id = :playerId", { playerId: currentPlayerId })
-        .getRawOne();
+                       )
+                FROM player_answers pa
+                WHERE pa."playerId" = p."id"
+            ) as "answers"
+        FROM player p
+        WHERE p.id = $1
+    `;
+      const currentPlayerRes = await this.dataSource.query(currentPlayerQuery, [
+        currentPlayerId,
+      ]);
 
       return {
-        currentPlayer,
+        currentPlayer: currentPlayerRes?.[0],
         anotherPlayerId,
       };
     } catch (e) {

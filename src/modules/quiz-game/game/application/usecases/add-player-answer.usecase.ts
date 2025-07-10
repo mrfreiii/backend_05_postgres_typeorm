@@ -52,7 +52,8 @@ export class AddPlayerAnswerCommandHandler
         // TODO: replace to DomainExceptionCode.Forbidden
         // тут что-то не так, или перепроверять возможные кейсы
         // или квери билдер отрабатывает неверно
-        code: DomainExceptionCode.NotFound,
+        // code: DomainExceptionCode.NotFound, временное решение для отлова проблемы
+        code: DomainExceptionCode.Forbidden,
         message: "User already answer to all questions",
         extensions: [
           {
