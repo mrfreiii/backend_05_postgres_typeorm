@@ -9,6 +9,7 @@ import {
 
 import { PlayerAnswers } from "./playerAnswers.entity.typeorm";
 import { UserAccount } from "../../../user-accounts/users/entity/user.entity.typeorm";
+import { PlayerGameResultStatusEnum } from "../enums/playerGameResultStatus.enum";
 
 @Entity()
 export class Player {
@@ -26,4 +27,11 @@ export class Player {
 
   @OneToMany(() => PlayerAnswers, (answers) => answers.player)
   answers: PlayerAnswers[] | null;
+
+  @Column({
+    type: "enum",
+    enum: PlayerGameResultStatusEnum,
+    nullable: true,
+  })
+  status: PlayerGameResultStatusEnum;
 }

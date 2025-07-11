@@ -26,6 +26,7 @@ import { GamesQueryRepository } from "./game/infrastructure/query/games.query-re
 import { AddPlayerAnswerCommandHandler } from "./game/application/usecases/add-player-answer.usecase";
 import { PlayerAnswersRepository } from "./game/infrastructure/playerAnswers.repository";
 import { PlayerAnswersQueryRepository } from "./game/infrastructure/query/playerAnswers.query-repository";
+import { PlayersQueryRepository } from "./game/infrastructure/query/players.query-repository";
 
 const commandHandlers = [
   CreateQuestionCommandHandler,
@@ -46,6 +47,7 @@ const repos = [
   GamesRepository,
   GamesQueryRepository,
   PlayersRepository,
+  PlayersQueryRepository,
   PlayerAnswersRepository,
   PlayerAnswersQueryRepository,
 ];

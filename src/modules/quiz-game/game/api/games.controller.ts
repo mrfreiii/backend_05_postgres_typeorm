@@ -29,6 +29,8 @@ import { PlayerAnswerViewDtoTypeorm } from "./view-dto/playerAnswer.view-dto.pg.
 import { PlayerAnswersQueryRepository } from "../infrastructure/query/playerAnswers.query-repository";
 import { GetGamesQueryParams } from "./input-dto/get-games-query-params.input-dto";
 import { PaginatedViewDto } from "../../../../core/dto/base.paginated.view-dto";
+import { GamesStatisticViewDtoTypeorm } from "./view-dto/games-statistic.view-dto.pg";
+import { PlayersQueryRepository } from "../infrastructure/query/players.query-repository";
 
 @Controller(SETTINGS.PATH.GAMES)
 @UseGuards(JwtAuthGuard)
@@ -39,9 +41,10 @@ export class GamesController {
     private gamesQueryRepository: GamesQueryRepository,
     private gamesRepository: GamesRepository,
     private playerAnswersQueryRepository: PlayerAnswersQueryRepository,
+    private playersQueryRepository: PlayersQueryRepository,
   ) {}
 
-  @Post("connection")
+  @Post("pairs/connection")
   @HttpCode(HttpStatus.OK)
   async connectUserToGame(
     @ExtractUserFromRequest() user: UserContextDto,
@@ -53,7 +56,7 @@ export class GamesController {
     return this.gamesQueryRepository.getByIdOrNotFoundFail_typeorm(gameId);
   }
 
-  @Get(":id")
+  @Get("pairs/:id")
   async getGameById(
     @Param("id") id: string,
     @Query() query: GetGamesQueryParams,
@@ -121,7 +124,7 @@ export class GamesController {
     return game;
   }
 
-  @Post("my-current/answers")
+  @Post("pairs/my-current/answers")
   @HttpCode(HttpStatus.OK)
   async addGameAnswer(
     @Body() body: AddPlayerAnswerInputDto,
@@ -137,5 +140,13 @@ export class GamesController {
     return this.playerAnswersQueryRepository.getPlayerAnswerById_typeorm(
       playerAnswerId,
     );
+  }
+
+  @Get("users/my-statistic")
+  @HttpCode(HttpStatus.OK)
+  async getUserGamesStatistic(
+    @ExtractUserFromRequest() user: UserContextDto,
+  ): Promise<GamesStatisticViewDtoTypeorm> {
+    return this.playersQueryRepository.getStatistic_typeorm(user.id);
   }
 }

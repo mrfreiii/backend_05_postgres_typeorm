@@ -11,6 +11,7 @@ import { DomainException } from "../../../../../core/exceptions/domain-exception
 import { PlayerAnswersRepository } from "../../infrastructure/playerAnswers.repository";
 import { DomainExceptionCode } from "../../../../../core/exceptions/domain-exception-codes";
 import { GameStatusEnum } from "../../enums/gameStatus.enum";
+import { PlayerGameResultStatusEnum } from "../../enums/playerGameResultStatus.enum";
 
 export class AddPlayerAnswerCommand {
   constructor(public dto: { userId: string; playerAnswer: string }) {}
@@ -98,12 +99,11 @@ export class AddPlayerAnswerCommandHandler
     await this.playerAnswersRepository.save_player_answer_typeorm(newAnswer);
 
     // Add score for current player
-    if (isCurrentAnswerCorrect) {
-      const currentPlayerForUpdate =
-        await this.playersRepository.getPlayerById_typeorm(currentPlayer.id);
+    const currentPlayerForUpdate =
+      await this.playersRepository.getPlayerById_typeorm(currentPlayer.id);
 
+    if (isCurrentAnswerCorrect) {
       currentPlayerForUpdate!.score += 1;
-      await this.playersRepository.save_player_typeorm(currentPlayerForUpdate!);
     }
 
     // Add additional score for other player if all players answered to all questions,
@@ -130,7 +130,6 @@ export class AddPlayerAnswerCommandHandler
       anotherPlayerForUpdate!.score > 0
     ) {
       anotherPlayerForUpdate!.score += 1;
-      await this.playersRepository.save_player_typeorm(anotherPlayerForUpdate!);
     }
 
     // Finish game if both players answer to all questions
@@ -144,7 +143,27 @@ export class AddPlayerAnswerCommandHandler
 
         await this.gamesRepository.save_game_typeorm(game);
       }
+
+      // Determine who is winner
+      if (currentPlayerForUpdate!.score > anotherPlayerForUpdate!.score) {
+        currentPlayerForUpdate!.status = PlayerGameResultStatusEnum.Win;
+        anotherPlayerForUpdate!.status = PlayerGameResultStatusEnum.Lose;
+      }
+
+      if (anotherPlayerForUpdate!.score > currentPlayerForUpdate!.score) {
+        anotherPlayerForUpdate!.status = PlayerGameResultStatusEnum.Win;
+        currentPlayerForUpdate!.status = PlayerGameResultStatusEnum.Lose;
+      }
+
+      if (anotherPlayerForUpdate!.score === currentPlayerForUpdate!.score) {
+        anotherPlayerForUpdate!.status = PlayerGameResultStatusEnum.Draw;
+        currentPlayerForUpdate!.status = PlayerGameResultStatusEnum.Draw;
+      }
     }
+
+    // Save both players
+    await this.playersRepository.save_player_typeorm(currentPlayerForUpdate!);
+    await this.playersRepository.save_player_typeorm(anotherPlayerForUpdate!);
 
     return newAnswer.id;
   }
