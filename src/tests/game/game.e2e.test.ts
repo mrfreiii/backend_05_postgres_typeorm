@@ -11,7 +11,6 @@ import { GameViewDtoTypeorm } from "../../modules/quiz-game/game/api/view-dto/ga
 import { UserViewDtoPg } from "../../modules/user-accounts/users/api/view-dto/users.view-dto.pg";
 import { QuestionViewDto } from "../../modules/quiz-game/questions/api/view-dto/questions.view-dto";
 
-
 describe("connects to game (sequential requests) /connection", () => {
   connectToTestDBAndClearRepositories();
 
@@ -1266,11 +1265,11 @@ describe("get all user games /my", () => {
 
     // connect users to game1
     await req
-      .post(`${SETTINGS.PATH.GAMES}/connection`)
+      .post(`${SETTINGS.PATH.GAMES}/pairs/connection`)
       .set("Authorization", `Bearer ${user1Token}`)
       .expect(200);
     const game1Res = await req
-      .post(`${SETTINGS.PATH.GAMES}/connection`)
+      .post(`${SETTINGS.PATH.GAMES}/pairs/connection`)
       .set("Authorization", `Bearer ${user2Token}`)
       .expect(200);
 
@@ -1295,31 +1294,31 @@ describe("get all user games /my", () => {
     // Answer to game1 by user1
     // answer #1
     await req
-      .post(`${SETTINGS.PATH.GAMES}/my-current/answers`)
+      .post(`${SETTINGS.PATH.GAMES}/pairs/my-current/answers`)
       .set("Authorization", `Bearer ${user1Token}`)
       .send({ answer: correctAnswer1 })
       .expect(200);
     // answer #2
     await req
-      .post(`${SETTINGS.PATH.GAMES}/my-current/answers`)
+      .post(`${SETTINGS.PATH.GAMES}/pairs/my-current/answers`)
       .set("Authorization", `Bearer ${user1Token}`)
       .send({ answer: correctAnswer2 })
       .expect(200);
     // answer #3
     await req
-      .post(`${SETTINGS.PATH.GAMES}/my-current/answers`)
+      .post(`${SETTINGS.PATH.GAMES}/pairs/my-current/answers`)
       .set("Authorization", `Bearer ${user1Token}`)
       .send({ answer: correctAnswer3 })
       .expect(200);
     // answer #4
     await req
-      .post(`${SETTINGS.PATH.GAMES}/my-current/answers`)
+      .post(`${SETTINGS.PATH.GAMES}/pairs/my-current/answers`)
       .set("Authorization", `Bearer ${user1Token}`)
       .send({ answer: "incorrect answer" })
       .expect(200);
     // answer #5
     await req
-      .post(`${SETTINGS.PATH.GAMES}/my-current/answers`)
+      .post(`${SETTINGS.PATH.GAMES}/pairs/my-current/answers`)
       .set("Authorization", `Bearer ${user1Token}`)
       .send({ answer: "incorrect answer" })
       .expect(200);
@@ -1327,42 +1326,42 @@ describe("get all user games /my", () => {
     // Answer to game1 by user2
     // answer #1
     await req
-      .post(`${SETTINGS.PATH.GAMES}/my-current/answers`)
+      .post(`${SETTINGS.PATH.GAMES}/pairs/my-current/answers`)
       .set("Authorization", `Bearer ${user2Token}`)
       .send({ answer: "incorrect answer" })
       .expect(200);
     // answer #2
     await req
-      .post(`${SETTINGS.PATH.GAMES}/my-current/answers`)
+      .post(`${SETTINGS.PATH.GAMES}/pairs/my-current/answers`)
       .set("Authorization", `Bearer ${user2Token}`)
       .send({ answer: "incorrect answer" })
       .expect(200);
     // answer #3
     await req
-      .post(`${SETTINGS.PATH.GAMES}/my-current/answers`)
+      .post(`${SETTINGS.PATH.GAMES}/pairs/my-current/answers`)
       .set("Authorization", `Bearer ${user2Token}`)
       .send({ answer: "incorrect answer" })
       .expect(200);
     // answer #4
     await req
-      .post(`${SETTINGS.PATH.GAMES}/my-current/answers`)
+      .post(`${SETTINGS.PATH.GAMES}/pairs/my-current/answers`)
       .set("Authorization", `Bearer ${user2Token}`)
       .send({ answer: correctAnswer4 })
       .expect(200);
     // answer #5
     await req
-      .post(`${SETTINGS.PATH.GAMES}/my-current/answers`)
+      .post(`${SETTINGS.PATH.GAMES}/pairs/my-current/answers`)
       .set("Authorization", `Bearer ${user2Token}`)
       .send({ answer: correctAnswer5 })
       .expect(200);
 
     // connect users to game2
     await req
-      .post(`${SETTINGS.PATH.GAMES}/connection`)
+      .post(`${SETTINGS.PATH.GAMES}/pairs/connection`)
       .set("Authorization", `Bearer ${user1Token}`)
       .expect(200);
     const game2Res = await req
-      .post(`${SETTINGS.PATH.GAMES}/connection`)
+      .post(`${SETTINGS.PATH.GAMES}/pairs/connection`)
       .set("Authorization", `Bearer ${user2Token}`)
       .expect(200);
 
@@ -1371,7 +1370,7 @@ describe("get all user games /my", () => {
     // Answer to game2 by user1
     // answer #1
     await req
-      .post(`${SETTINGS.PATH.GAMES}/my-current/answers`)
+      .post(`${SETTINGS.PATH.GAMES}/pairs/my-current/answers`)
       .set("Authorization", `Bearer ${user1Token}`)
       .send({ answer: correctAnswer1 })
       .expect(200);
@@ -1379,19 +1378,19 @@ describe("get all user games /my", () => {
     // Answer to game2 by user2
     // answer #1
     await req
-      .post(`${SETTINGS.PATH.GAMES}/my-current/answers`)
+      .post(`${SETTINGS.PATH.GAMES}/pairs/my-current/answers`)
       .set("Authorization", `Bearer ${user2Token}`)
       .send({ answer: correctAnswer1 })
       .expect(200);
   });
 
   it("should return 401 for request without auth header", async () => {
-    await req.get(`${SETTINGS.PATH.GAMES}/my`).expect(401);
+    await req.get(`${SETTINGS.PATH.GAMES}/pairs/my`).expect(401);
   });
 
   it("should return games", async () => {
     const res = await req
-      .get(`${SETTINGS.PATH.GAMES}/my`)
+      .get(`${SETTINGS.PATH.GAMES}/pairs/my`)
       .set("Authorization", `Bearer ${user1Token}`)
       .expect(200);
 
