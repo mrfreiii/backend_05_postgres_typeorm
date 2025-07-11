@@ -1,15 +1,14 @@
 import { Column, Entity, JoinColumn, ManyToOne } from "typeorm";
 
-import { User } from "../../users/entity/user.entity.typeorm";
+import { UserAccount } from "../../users/entity/user.entity.typeorm";
 
 @Entity()
 export class Session {
-  @ManyToOne(() => User, (user) => user.sessions)
+  @ManyToOne(() => UserAccount, (userAccount) => userAccount.sessions)
   @JoinColumn()
-  user: User;
-
+  userAccount: UserAccount;
   @Column()
-  userId: string;
+  userAccountId: string;
 
   @Column({ primary: true })
   deviceId: string;

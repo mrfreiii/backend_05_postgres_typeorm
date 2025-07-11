@@ -1,7 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import { validate as isValidUUID } from "uuid";
-import { DataSource, Repository, SelectQueryBuilder } from "typeorm";
-import { InjectDataSource, InjectRepository } from "@nestjs/typeorm";
+import { InjectRepository } from "@nestjs/typeorm";
+import { Repository, SelectQueryBuilder } from "typeorm";
 
 import {
   CommentQueryRepoType,
@@ -18,7 +18,6 @@ import { GetCommentsQueryParams } from "../../api/input-dto/get-comments-query-p
 @Injectable()
 export class CommentsQueryRepository {
   constructor(
-    @InjectDataSource() private dataSource: DataSource,
     @InjectRepository(Comment)
     private commentEntity: Repository<CommentQueryRepoType>,
   ) {}
@@ -88,38 +87,10 @@ export class CommentsQueryRepository {
     userId?: string;
   }): Promise<PaginatedViewDto<CommentViewDtoTypeorm[]>> {
     const query = this._getCommentQueryBuilder(userId);
-    // const queryParams: string[] = [];
-    //
-    // let dataQuery = `
-    //    SELECT c.*, u."login" as "userLogin"
-    //    FROM ${SETTINGS.TABLES.COMMENTS} c
-    //      LEFT JOIN ${SETTINGS.TABLES.USERS} u
-    //      ON c."userId" = u."id"
-    //        WHERE c."deletedAt" IS NULL
-    // `;
-    //
-    // let countQuery = `
-    //    SELECT count(*)
-    //    FROM ${SETTINGS.TABLES.COMMENTS} c
-    //      WHERE c."deletedAt" IS NULL
-    // `;
 
     if (postId) {
       query.andWhere("c.postId = :postId", { postId });
-      // const additionalPart = ` AND c."postId" = $1`;
-      //
-      // dataQuery = `${dataQuery} ${additionalPart}`;
-      // countQuery = `${countQuery} ${additionalPart}`;
-      //
-      // queryParams.push(postId);
     }
-
-    // dataQuery = `
-    //    ${dataQuery}
-    //      ORDER BY "${requestParams.sortBy}" ${requestParams.sortDirection}
-    //      LIMIT ${requestParams.pageSize}
-    //      OFFSET ${requestParams.calculateSkip()}
-    // `;
 
     try {
       const totalCount = await query.getCount();
@@ -131,11 +102,6 @@ export class CommentsQueryRepository {
         .limit(requestParams.pageSize)
         .offset(requestParams.calculateSkip())
         .getRawMany();
-      // const comments = await this.dataSource.query(dataQuery, [...queryParams]);
-
-      // const totalCountRes = await this.dataSource.query(countQuery, [
-      //   ...queryParams,
-      // ]);
 
       const items = comments.map((c) => CommentViewDtoTypeorm.mapToView(c));
 
@@ -165,11 +131,11 @@ export class CommentsQueryRepository {
   ): SelectQueryBuilder<CommentQueryRepoType> {
     return this.commentEntity
       .createQueryBuilder("c")
-      .leftJoin("c.user", "u")
+      .leftJoin("c.userAccount", "u")
       .select([
         'c.id as "id"',
         'c.content as "content"',
-        'c.userId as "userId"',
+        'c.userAccountId as "userAccountId"',
         'c.createdAt as "createdAt"',
         'u.login as "userLogin"',
       ])
@@ -201,9 +167,12 @@ export class CommentsQueryRepository {
             .select("ls.status")
             .from(CommentLike, "cl")
             .leftJoin("cl.likeStatus", "ls")
-            .where("cl.commentId = c.id and cl.userId = :userId", {
-              userId,
-            }),
+            .where(
+              "cl.commentId = c.id and cl.userAccountId = :userAccountId",
+              {
+                userAccountId: userId,
+              },
+            ),
         "myStatus",
       );
   }

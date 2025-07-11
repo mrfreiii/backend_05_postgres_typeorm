@@ -39,7 +39,7 @@ export class LoginUserCommandHandler
       parseRefreshToken(refreshToken);
 
     const session = this.sessionEntity.create({
-      userId,
+      userAccountId: userId,
       deviceId,
       ip: ip || "unknown ip",
       title: deviceTitle,

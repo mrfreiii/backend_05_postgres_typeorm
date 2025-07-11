@@ -9,7 +9,7 @@ import {
 
 import { Comment } from "./comment.entity.typeorm";
 import { LikeStatus } from "../../likes/entity/likes.entity.typeorm";
-import { User } from "../../../user-accounts/users/entity/user.entity.typeorm";
+import { UserAccount } from "../../../user-accounts/users/entity/user.entity.typeorm";
 
 @Entity()
 export class CommentLike {
@@ -22,11 +22,11 @@ export class CommentLike {
   @Column()
   commentId: string;
 
-  @ManyToOne(() => User) //односторонняя связь без второго колбека
+  @ManyToOne(() => UserAccount) //односторонняя связь без второго колбека
   @JoinColumn()
-  user: User;
+  userAccount: UserAccount;
   @Column()
-  userId: string;
+  userAccountId: string;
 
   @ManyToOne(() => LikeStatus)
   @JoinColumn()

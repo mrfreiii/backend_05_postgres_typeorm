@@ -11,7 +11,7 @@ import {
 
 import { CommentLike } from "./commentLike.entity.typeorm";
 import { Post } from "../../posts/entity/post.entity.typeorm";
-import { User } from "../../../user-accounts/users/entity/user.entity.typeorm";
+import { UserAccount } from "../../../user-accounts/users/entity/user.entity.typeorm";
 
 @Entity()
 export class Comment {
@@ -27,11 +27,11 @@ export class Comment {
   @Column()
   postId: string;
 
-  @ManyToOne(() => User)
+  @ManyToOne(() => UserAccount)
   @JoinColumn()
-  user: User;
+  userAccount: UserAccount;
   @Column()
-  userId: string;
+  userAccountId: string;
 
   @CreateDateColumn()
   createdAt: string;

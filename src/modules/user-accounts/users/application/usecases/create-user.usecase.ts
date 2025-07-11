@@ -3,7 +3,7 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { CommandHandler, ICommandHandler } from "@nestjs/cqrs";
 
 import { CryptoService } from "../crypto.service";
-import { User } from "../../entity/user.entity.typeorm";
+import { UserAccount } from "../../entity/user.entity.typeorm";
 import { CreateUserDto } from "../../dto/create-user.dto";
 import { UsersRepository } from "../../infrastructure/users.repository";
 import { DomainException } from "../../../../../core/exceptions/domain-exceptions";
@@ -20,7 +20,7 @@ export class CreateUserCommandHandler
   constructor(
     private usersRepository: UsersRepository,
     private cryptoService: CryptoService,
-    @InjectRepository(User) private userEntity: Repository<User>,
+    @InjectRepository(UserAccount) private userEntity: Repository<UserAccount>,
   ) {}
 
   async execute({ dto }: CreateUserCommand): Promise<string> {

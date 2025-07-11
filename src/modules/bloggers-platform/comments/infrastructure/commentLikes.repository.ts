@@ -9,7 +9,8 @@ import { DomainExceptionCode } from "../../../../core/exceptions/domain-exceptio
 @Injectable()
 export class CommentLikesRepository {
   constructor(
-    @InjectRepository(CommentLike) private commentLikeEntity: Repository<CommentLike>,
+    @InjectRepository(CommentLike)
+    private commentLikeEntity: Repository<CommentLike>,
   ) {}
 
   async findCommentLike_typeorm(dto: {
@@ -20,7 +21,7 @@ export class CommentLikesRepository {
 
     try {
       return this.commentLikeEntity.findOne({
-        where: { commentId, userId },
+        where: { commentId, userAccountId: userId },
       });
     } catch {
       throw new DomainException({

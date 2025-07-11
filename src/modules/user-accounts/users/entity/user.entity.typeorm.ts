@@ -23,7 +23,7 @@ export const passwordConstraints = {
 };
 
 @Entity()
-export class User {
+export class UserAccount {
   @PrimaryGeneratedColumn("uuid")
   id: string;
 
@@ -45,15 +45,18 @@ export class User {
   @DeleteDateColumn()
   deletedAt: string | null;
 
-  @OneToOne(() => UserRegistration, (userRegistration) => userRegistration.user)
+  @OneToOne(
+    () => UserRegistration,
+    (userRegistration) => userRegistration.userAccount,
+  )
   userRegistration: UserRegistration;
 
   @OneToOne(
     () => UserPasswordRecovery,
-    (userPasswordRecovery) => userPasswordRecovery.user,
+    (userPasswordRecovery) => userPasswordRecovery.userAccount,
   )
   userPasswordRecovery: UserPasswordRecovery;
 
-  @OneToMany(() => Session, (session) => session.user)
+  @OneToMany(() => Session, (session) => session.userAccount)
   sessions: Session[];
 }

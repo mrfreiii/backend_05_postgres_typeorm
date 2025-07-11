@@ -28,7 +28,7 @@ export class CommentViewDtoTypeorm {
     viewComment.id = comment.id;
     viewComment.content = comment.content;
     viewComment.commentatorInfo = {
-      userId: comment.userId,
+      userId: comment.userAccountId,
       userLogin: comment.userLogin,
     };
     viewComment.createdAt = comment.createdAt;

@@ -20,7 +20,7 @@ export class PostLikesRepository {
 
     try {
       return this.postLikeEntity.findOne({
-        where: { postId, userId },
+        where: { postId, userAccountId: userId },
       });
     } catch {
       throw new DomainException({

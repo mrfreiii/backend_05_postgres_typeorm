@@ -92,7 +92,7 @@ export class PostsService {
         case LikeStatusEnum.Dislike: {
           const postLike = this.postLikeEntity.create({
             postId,
-            userId,
+            userAccountId: userId,
             likeStatusId: mapEnumLikeStatusToBdStatus(newLikeStatus),
           });
 

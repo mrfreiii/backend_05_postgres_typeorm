@@ -35,7 +35,7 @@ export class CommentsService {
     const comment = this.commentEntity.create({
       content: dto.content,
       postId: dto.postId,
-      userId: dto.userId,
+      userAccountId: dto.userId,
     });
 
     await this.commentsRepository.save_comment_typeorm(comment);
@@ -55,7 +55,7 @@ export class CommentsService {
     const comment =
       await this.commentsRepository.getByIdOrNotFoundFail_typeorm(commentId);
 
-    if (comment.userId !== userId) {
+    if (comment.userAccountId !== userId) {
       throw new DomainException({
         code: DomainExceptionCode.Forbidden,
         message: "Forbidden to edit another user's comment",
@@ -82,7 +82,7 @@ export class CommentsService {
     const comment =
       await this.commentsRepository.getByIdOrNotFoundFail_typeorm(commentId);
 
-    if (comment.userId !== userId) {
+    if (comment.userAccountId !== userId) {
       throw new DomainException({
         code: DomainExceptionCode.Forbidden,
         message: "Forbidden to delete another user's comment",
@@ -121,7 +121,7 @@ export class CommentsService {
         case LikeStatusEnum.Dislike: {
           const commentLike = this.commentLikeEntity.create({
             commentId,
-            userId,
+            userAccountId: userId,
             likeStatusId: mapEnumLikeStatusToBdStatus(newLikeStatus),
           });
 

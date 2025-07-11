@@ -8,18 +8,18 @@ import {
 } from "typeorm";
 
 import { PlayerAnswers } from "./playerAnswers.entity.typeorm";
-import { User } from "../../../user-accounts/users/entity/user.entity.typeorm";
+import { UserAccount } from "../../../user-accounts/users/entity/user.entity.typeorm";
 
 @Entity()
 export class Player {
   @PrimaryGeneratedColumn("uuid")
   id: string;
 
-  @ManyToOne(() => User)
+  @ManyToOne(() => UserAccount)
   @JoinColumn()
-  user: User;
+  userAccount: UserAccount;
   @Column()
-  userId: string;
+  userAccountId: string;
 
   @Column({ default: 0 })
   score: number;

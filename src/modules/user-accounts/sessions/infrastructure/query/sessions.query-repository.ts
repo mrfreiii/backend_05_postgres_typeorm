@@ -19,7 +19,7 @@ export class SessionsQueryRepository {
     try {
       const sessions = await this.sessionEntity.find({
         where: {
-          userId,
+          userAccountId: userId,
         },
         order: {
           issuedAt: "asc",

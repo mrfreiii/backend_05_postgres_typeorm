@@ -67,7 +67,7 @@ export class ResendUserRegistrationEmailCommandHandler
 
     if (!registrationInfo) {
       registrationInfo = this.userRegistrationEntity.create({
-        userId: user.id,
+        userAccountId: user.id,
       });
     }
 

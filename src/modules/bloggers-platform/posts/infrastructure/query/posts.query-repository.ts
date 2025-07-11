@@ -92,7 +92,7 @@ export class PostsQueryRepository {
     let post: PostQueryRepoType | null | undefined;
 
     try {
-      post = await this._getPostQueryBuilder(userId)
+      post = await this._getPostQueryBuilder(userId)!
         .where("p.id = :postId", { postId })
         .getRawOne();
     } catch (e) {
@@ -135,6 +135,18 @@ export class PostsQueryRepository {
     userId?: string;
   }): Promise<PaginatedViewDto<PostViewDtoTypeorm[]>> {
     const query = this._getPostQueryBuilder(userId);
+    if (!query) {
+      throw new DomainException({
+        code: DomainExceptionCode.InternalServerError,
+        message: "Failed to create query builder",
+        extensions: [
+          {
+            field: "",
+            message: "Failed to create query builder",
+          },
+        ],
+      });
+    }
 
     if (blogId) {
       query.andWhere("p.blogId = :blogId", { blogId });
@@ -176,83 +188,97 @@ export class PostsQueryRepository {
 
   private _getPostQueryBuilder(
     userId?: string,
-  ): SelectQueryBuilder<PostQueryRepoType> {
-    return this.postEntity
-      .createQueryBuilder("p")
-      .leftJoin("p.blog", "b")
-      .select([
-        'p.id as "id"',
-        'p.title as "title"',
-        'p.shortDescription as "shortDescription"',
-        'p.content as "content"',
-        'p.blogId as "blogId"',
-        'p.createdAt as "createdAt"',
-        'b.name as "blogName"',
-      ])
-      .addSelect(
-        (sb) =>
-          sb
-            .select("COUNT(*)")
-            .from("PostLike", "pl")
-            .leftJoin("pl.likeStatus", "ls")
-            .where("pl.postId = p.id and ls.status = :likeStatus", {
-              likeStatus: LikeStatusEnum.Like,
-            }),
-        "likesCount",
-      )
-      .addSelect(
-        (sb) =>
-          sb
-            .select("COUNT(*)")
-            .from("PostLike", "pl")
-            .leftJoin("pl.likeStatus", "ls")
-            .where("pl.postId = p.id and ls.status = :dislikeStatus", {
-              dislikeStatus: LikeStatusEnum.Dislike,
-            }),
-        "dislikesCount",
-      )
-      .addSelect(
-        (sb) =>
-          sb
-            .select("ls.status")
-            .from("PostLike", "pl")
-            .leftJoin("pl.likeStatus", "ls")
-            .where("pl.postId = p.id and pl.userId = :userId", {
-              userId,
-            }),
-        "myStatus",
-      )
-      .addSelect(
-        (sb) =>
-          sb
-            .select(
-              `jsonb_agg(
+  ): SelectQueryBuilder<PostQueryRepoType> | undefined {
+    try {
+      return this.postEntity
+        .createQueryBuilder("p")
+        .leftJoin("p.blog", "b")
+        .select([
+          'p.id as "id"',
+          'p.title as "title"',
+          'p.shortDescription as "shortDescription"',
+          'p.content as "content"',
+          'p.blogId as "blogId"',
+          'p.createdAt as "createdAt"',
+          'b.name as "blogName"',
+        ])
+        .addSelect(
+          (sb) =>
+            sb
+              .select("COUNT(*)")
+              .from("PostLike", "pl")
+              .leftJoin("pl.likeStatus", "ls")
+              .where("pl.postId = p.id and ls.status = :likeStatus", {
+                likeStatus: LikeStatusEnum.Like,
+              }),
+          "likesCount",
+        )
+        .addSelect(
+          (sb) =>
+            sb
+              .select("COUNT(*)")
+              .from("PostLike", "pl")
+              .leftJoin("pl.likeStatus", "ls")
+              .where("pl.postId = p.id and ls.status = :dislikeStatus", {
+                dislikeStatus: LikeStatusEnum.Dislike,
+              }),
+          "dislikesCount",
+        )
+        .addSelect(
+          (sb) =>
+            sb
+              .select("ls.status")
+              .from(PostLike, "pl")
+              .leftJoin("pl.likeStatus", "ls")
+              .where("pl.postId = p.id and pl.userAccountId = :userAccountId", {
+                userAccountId: userId,
+              }),
+          "myStatus",
+        )
+        .addSelect(
+          (sb) =>
+            sb
+              .select(
+                `jsonb_agg(
                             json_build_object(
                                 'addedAt', aggregated_pl."addedAt", 
                                 'userId', aggregated_pl."userId", 
                                 'login', aggregated_pl."login"
                             )
                          )`,
-            )
-            .from(
-              (sb) =>
-                sb
-                  .select([
-                    'pl.updatedAt as "addedAt"',
-                    'pl.userId as "userId"',
-                    'u.login as "login"',
-                  ])
-                  .from(PostLike, "pl")
-                  .leftJoin("pl.likeStatus", "ls")
-                  .leftJoin("pl.user", "u")
-                  .where("pl.postId = p.id and ls.status = :status", {
-                    status: LikeStatusEnum.Like,
-                  })
-                  .orderBy('pl."updatedAt"', "DESC")
-                  .limit(3),
-              "aggregated_pl",
-            ),
-        "newestLikes",
-      );
+              )
+              .from(
+                (sb) =>
+                  sb
+                    .select([
+                      'pl.updatedAt as "addedAt"',
+                      'pl.userAccountId as "userId"',
+                      'u.login as "login"',
+                    ])
+                    .from(PostLike, "pl")
+                    .leftJoin("pl.likeStatus", "ls")
+                    .leftJoin("pl.userAccount", "u")
+                    .where("pl.postId = p.id and ls.status = :status", {
+                      status: LikeStatusEnum.Like,
+                    })
+                    .orderBy('pl."updatedAt"', "DESC")
+                    .limit(3),
+                "aggregated_pl",
+              ),
+          "newestLikes",
+        );
+    } catch (e) {
+      console.log(e);
+      throw new DomainException({
+        code: DomainExceptionCode.InternalServerError,
+        message: "Failed to create query builder",
+        extensions: [
+          {
+            field: "",
+            message: "Failed to create query builder",
+          },
+        ],
+      });
+    }
   }
 }

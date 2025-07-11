@@ -41,7 +41,7 @@ export class SessionsRepository {
     try {
       return this.sessionEntity.findOne({
         where: {
-          userId,
+          userAccountId: userId,
           deviceId,
           version,
         },
@@ -120,7 +120,7 @@ export class SessionsRepository {
 
     try {
       await this.sessionEntity.delete({
-        userId,
+        userAccountId: userId,
         deviceId: Not(currentDeviceId),
       });
     } catch (e) {

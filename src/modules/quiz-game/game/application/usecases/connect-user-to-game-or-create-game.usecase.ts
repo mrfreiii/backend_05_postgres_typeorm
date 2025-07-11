@@ -42,7 +42,7 @@ export class ConnectUserToGameOrCreateGameCommandHandler
     }
 
     const newPlayer = this.playerEntity.create({
-      userId,
+      userAccountId: userId,
     });
     await this.playersRepository.save_player_typeorm(newPlayer);
 

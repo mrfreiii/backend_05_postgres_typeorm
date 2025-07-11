@@ -1,6 +1,6 @@
 import { Column, Entity, JoinColumn, OneToOne } from "typeorm";
 
-import { User } from "./user.entity.typeorm";
+import { UserAccount } from "./user.entity.typeorm";
 
 @Entity()
 export class UserRegistration {
@@ -10,10 +10,9 @@ export class UserRegistration {
   @Column({ type: "bigint" })
   codeExpirationDate: number;
 
-  @OneToOne(() => User, (user) => user.userRegistration)
+  @OneToOne(() => UserAccount, (userAccount) => userAccount.userRegistration)
   @JoinColumn()
-  user: User;
-
+  userAccount: UserAccount;
   @Column({ primary: true })
-  userId: string;
+  userAccountId: string;
 }

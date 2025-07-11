@@ -55,7 +55,7 @@ export class DeleteSessionByIdCommandHandler
       });
     }
 
-    if (payload.userId !== sessionForDeletion.userId) {
+    if (payload.userId !== sessionForDeletion.userAccountId) {
       throw new DomainException({
         code: DomainExceptionCode.Forbidden,
         message: "Forbidden deleting session of another user",

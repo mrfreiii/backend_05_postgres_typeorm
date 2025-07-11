@@ -49,10 +49,6 @@ export class AddPlayerAnswerCommandHandler
 
     if (currentPlayer?.answers?.length === GAME_QUESTIONS_COUNT) {
       throw new DomainException({
-        // TODO: replace to DomainExceptionCode.Forbidden
-        // тут что-то не так, или перепроверять возможные кейсы
-        // или квери билдер отрабатывает неверно
-        // code: DomainExceptionCode.NotFound, временное решение для отлова проблемы
         code: DomainExceptionCode.Forbidden,
         message: "User already answer to all questions",
         extensions: [

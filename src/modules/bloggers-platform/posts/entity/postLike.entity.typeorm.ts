@@ -10,10 +10,10 @@ import {
 
 import { Post } from "./post.entity.typeorm";
 import { LikeStatus } from "../../likes/entity/likes.entity.typeorm";
-import { User } from "../../../user-accounts/users/entity/user.entity.typeorm";
+import { UserAccount } from "../../../user-accounts/users/entity/user.entity.typeorm";
 
 @Entity()
-@Unique(["postId", "userId"])
+@Unique(["postId", "userAccountId"])
 export class PostLike {
   @PrimaryGeneratedColumn()
   id: number;
@@ -21,21 +21,18 @@ export class PostLike {
   @ManyToOne(() => Post, (post) => post.likes)
   @JoinColumn()
   post: Post;
-
   @Column()
   postId: string;
 
-  @ManyToOne(() => User) //односторонняя связь без второго колбека
+  @ManyToOne(() => UserAccount) //односторонняя связь без второго колбека
   @JoinColumn()
-  user: User;
-
+  userAccount: UserAccount;
   @Column()
-  userId: string;
+  userAccountId: string;
 
   @ManyToOne(() => LikeStatus)
   @JoinColumn()
   likeStatus: LikeStatus;
-
   @Column()
   likeStatusId: number;
 

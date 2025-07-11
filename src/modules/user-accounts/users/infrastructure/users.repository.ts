@@ -3,7 +3,7 @@ import { Injectable } from "@nestjs/common";
 import { validate as isValidUUID } from "uuid";
 import { InjectRepository } from "@nestjs/typeorm";
 
-import { User } from "../entity/user.entity.typeorm";
+import { UserAccount } from "../entity/user.entity.typeorm";
 import { DomainException } from "../../../../core/exceptions/domain-exceptions";
 import { DomainExceptionCode } from "../../../../core/exceptions/domain-exception-codes";
 import { UserRegistration } from "../entity/registation.entity.typeorm";
@@ -12,14 +12,14 @@ import { UserPasswordRecovery } from "../entity/passwordRecovery.entity.typeorm"
 @Injectable()
 export class UsersRepository {
   constructor(
-    @InjectRepository(User) private userEntity: Repository<User>,
+    @InjectRepository(UserAccount) private userEntity: Repository<UserAccount>,
     @InjectRepository(UserRegistration)
     private userRegistrationEntity: Repository<UserRegistration>,
     @InjectRepository(UserPasswordRecovery)
     private userPasswordRecoveryEntity: Repository<UserPasswordRecovery>,
   ) {}
 
-  async save_user_typeorm(user: User) {
+  async save_user_typeorm(user: UserAccount) {
     try {
       const response = await this.userEntity.save(user);
 
@@ -39,7 +39,7 @@ export class UsersRepository {
     }
   }
 
-  async findByLogin_typeorm(login: string): Promise<User | null> {
+  async findByLogin_typeorm(login: string): Promise<UserAccount | null> {
     try {
       return this.userEntity.findOne({
         where: { login },
@@ -58,7 +58,7 @@ export class UsersRepository {
     }
   }
 
-  async findByEmail_typeorm(email: string): Promise<User | null> {
+  async findByEmail_typeorm(email: string): Promise<UserAccount | null> {
     try {
       return this.userEntity.findOne({
         where: { email },
@@ -77,7 +77,7 @@ export class UsersRepository {
     }
   }
 
-  async findOrNotFoundFail_typeorm(id: string): Promise<User> {
+  async findOrNotFoundFail_typeorm(id: string): Promise<UserAccount> {
     if (!isValidUUID(id)) {
       throw new DomainException({
         code: DomainExceptionCode.NotFound,
@@ -91,7 +91,7 @@ export class UsersRepository {
       });
     }
 
-    let user: User | null;
+    let user: UserAccount | null;
 
     try {
       user = await this.userEntity.findOne({
@@ -198,7 +198,7 @@ export class UsersRepository {
 
     try {
       return this.userRegistrationEntity.findOne({
-        where: { userId },
+        where: { userAccountId: userId },
       });
     } catch (e) {
       console.log(e);
@@ -264,7 +264,7 @@ export class UsersRepository {
   async findByLoginOrEmail_typeorm(dto: {
     login: string;
     email: string;
-  }): Promise<User | null> {
+  }): Promise<UserAccount | null> {
     try {
       return this.userEntity.findOne({
         where: [{ login: dto.login }, { email: dto.email }],

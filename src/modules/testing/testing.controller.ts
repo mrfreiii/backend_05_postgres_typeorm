@@ -11,7 +11,7 @@ import { InjectDataSource, InjectRepository } from "@nestjs/typeorm";
 
 import { SETTINGS } from "../../settings";
 import { RateLimit } from "../rateLimit/entity/rateLimit.entity.typeorm";
-import { User } from "../user-accounts/users/entity/user.entity.typeorm";
+import { UserAccount } from "../user-accounts/users/entity/user.entity.typeorm";
 import { DomainException } from "../../core/exceptions/domain-exceptions";
 import { DomainExceptionCode } from "../../core/exceptions/domain-exception-codes";
 import { UserRegistration } from "../user-accounts/users/entity/registation.entity.typeorm";
@@ -23,7 +23,7 @@ export class TestingController {
   constructor(
     @InjectDataSource() private dataSource: DataSource,
     @InjectRepository(RateLimit) private rateLimitEntity: Repository<RateLimit>,
-    @InjectRepository(User) private userEntity: Repository<User>,
+    @InjectRepository(UserAccount) private userEntity: Repository<UserAccount>,
     @InjectRepository(LikeStatus)
     private likeStatusEntity: Repository<LikeStatus>,
     @InjectRepository(UserRegistration)
@@ -113,7 +113,7 @@ export class TestingController {
       }
 
       const registrationInfo = await this.userRegistrationEntity.findOne({
-        where: { userId: user.id },
+        where: { userAccountId: user.id },
       });
       if (!registrationInfo) {
         throw new DomainException({
@@ -165,7 +165,7 @@ export class TestingController {
 
       const passwordRecoveryInfo =
         await this.userPasswordRecoveryEntity.findOne({
-          where: { userId: user.id },
+          where: { userAccountId: user.id },
         });
       if (!passwordRecoveryInfo) {
         throw new DomainException({

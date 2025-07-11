@@ -10,7 +10,7 @@ import {
 } from "./constants/auth-tokens.inject-constants";
 import { NotificationsModule } from "../notifications/notifications.module";
 
-import { User } from "./users/entity/user.entity.typeorm";
+import { UserAccount } from "./users/entity/user.entity.typeorm";
 import { UserRegistration } from "./users/entity/registation.entity.typeorm";
 
 import { AuthController } from "./auth/api/auth.controller";
@@ -101,7 +101,7 @@ const repos = [
 const strategies = [LocalStrategy, JwtStrategy];
 
 const typeorm_entities = [
-  User,
+  UserAccount,
   UserRegistration,
   UserPasswordRecovery,
   Session,

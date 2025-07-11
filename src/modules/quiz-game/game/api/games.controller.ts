@@ -8,8 +8,10 @@ import {
   HttpStatus,
   Param,
   Post,
+  Query,
   UseGuards,
 } from "@nestjs/common";
+import { validate as isValidUUID } from "uuid";
 
 import { SETTINGS } from "../../../../settings";
 import { GameViewDtoTypeorm } from "./view-dto/game.view-dto.pg";
@@ -25,7 +27,8 @@ import { AddPlayerAnswerCommand } from "../application/usecases/add-player-answe
 import { AddPlayerAnswerInputDto } from "./input-dto/add-player-answer.input-dto";
 import { PlayerAnswerViewDtoTypeorm } from "./view-dto/playerAnswer.view-dto.pg.ts";
 import { PlayerAnswersQueryRepository } from "../infrastructure/query/playerAnswers.query-repository";
-import { validate as isValidUUID } from "uuid";
+import { GetGamesQueryParams } from "./input-dto/get-games-query-params.input-dto";
+import { PaginatedViewDto } from "../../../../core/dto/base.paginated.view-dto";
 
 @Controller(SETTINGS.PATH.GAMES)
 @UseGuards(JwtAuthGuard)
@@ -53,16 +56,14 @@ export class GamesController {
   @Get(":id")
   async getGameById(
     @Param("id") id: string,
+    @Query() query: GetGamesQueryParams,
     @ExtractUserFromRequest() user: UserContextDto,
-  ): Promise<GameViewDtoTypeorm> {
+  ): Promise<GameViewDtoTypeorm | PaginatedViewDto<GameViewDtoTypeorm[]>> {
     let gameId = id;
 
     if (gameId === "my-current") {
       const res = await this.gamesRepository.getActiveGameIdByUserId(user?.id);
-      if (
-        !res
-        // || res?.status === (GameStatusEnum.PendingSecondPlayer as string)
-      ) {
+      if (!res) {
         throw new DomainException({
           code: DomainExceptionCode.NotFound,
           message: "There is no active game for current user",
@@ -76,6 +77,11 @@ export class GamesController {
       }
 
       gameId = res?.id;
+    } else if (gameId === "my") {
+      return this.gamesQueryRepository.getAll_typeorm({
+        requestParams: query,
+        userId: user.id,
+      });
     } else {
       if (!isValidUUID(gameId)) {
         throw new DomainException({

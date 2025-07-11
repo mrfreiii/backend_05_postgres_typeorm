@@ -51,7 +51,7 @@ export class UpdateUserPasswordCommandHandler
     }
 
     const user = await this.usersRepository.findOrNotFoundFail_typeorm(
-      passwordRecoveryInfo.userId,
+      passwordRecoveryInfo.userAccountId,
     );
 
     user.passwordHash = await this.cryptoService.createPasswordHash(

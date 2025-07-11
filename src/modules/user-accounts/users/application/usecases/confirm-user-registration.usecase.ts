@@ -46,7 +46,7 @@ export class ConfirmUserRegistrationCommandHandler
     }
 
     const user = await this.usersRepository.findOrNotFoundFail_typeorm(
-      registrationInfo.userId,
+      registrationInfo.userAccountId,
     );
     if (user.isEmailConfirmed) {
       throw new DomainException({

@@ -41,7 +41,7 @@ export class SendUserPasswordRecoveryCodeCommandHandler
       codeExpirationDate: add(new Date(), {
         minutes: 2,
       }).getTime(),
-      userId: user.id,
+      userAccountId: user.id,
     });
 
     await this.usersRepository.save_userPasswordRecoveryInfo_typeorm(

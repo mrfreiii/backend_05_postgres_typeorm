@@ -46,7 +46,7 @@ export class GamesRepository {
             ON g."firstPlayerId" = p1.id
          LEFT JOIN player p2
             ON g."secondPlayerId" = p2.id
-         WHERE (p1."userId" = $1 OR p2."userId" = $1)
+         WHERE (p1."userAccountId" = $1 OR p2."userAccountId" = $1)
             AND g."status" != $2
     `;
 
@@ -76,34 +76,18 @@ export class GamesRepository {
     anotherPlayerId: string;
   } | null> {
     try {
-      // Get players by query builder
-      // const players = await this.gameEntity
-      //   .createQueryBuilder("g")
-      //   .leftJoin("g.firstPlayer", "fp")
-      //   .leftJoin("g.secondPlayer", "sp")
-      //   .select([
-      //     'fp.id as "firstPlayerId"',
-      //     'fp."userId" as "firstPlayerUserId"',
-      //     'sp.id as "secondPlayerId"',
-      //     'sp."userId" as "secondPlayerUserId"',
-      //   ])
-      //   .where("fp.userId = :userId OR sp.userId = :userId", { userId })
-      //   .andWhere("g.finishGameDate IS NULL")
-      //   .andWhere("g.firstPlayerId IS NOT NULL")
-      //   .andWhere("g.secondPlayerId IS NOT NULL")
-      //   .getRawOne();
       const playersQuery = `
         SELECT 
             p1.id as "firstPlayerId",
-            p1."userId" as "firstPlayerUserId",
+            p1."userAccountId" as "firstPlayerUserId",
             p2.id as "secondPlayerId",
-            p2."userId" as "secondPlayerUserId"
+            p2."userAccountId" as "secondPlayerUserId"
         FROM game g
         LEFT JOIN player p1
             ON g."firstPlayerId" = p1.id
         LEFT JOIN player p2
             ON g."secondPlayerId" = p2.id
-        WHERE (p1."userId" = $1 OR p2."userId" = $1)
+        WHERE (p1."userAccountId" = $1 OR p2."userAccountId" = $1)
             AND g."status" = $2
             AND p1.id IS NOT NULL
             AND p2.id IS NOT NULL
@@ -131,28 +115,6 @@ export class GamesRepository {
         return null;
       }
 
-      // Get current player by query builder
-      // const currentPlayer = await this.playerEntity
-      //   .createQueryBuilder("p")
-      //   .select(['p.id as "id"', 'p.score as "score"'])
-      //   .addSelect(
-      //     (sb) =>
-      //       sb
-      //         .select(
-      //           `jsonb_agg(
-      //                       json_build_object(
-      //                           'questionId', pa."questionId",
-      //                           'answerStatus', pa."status",
-      //                           'addedAt', pa."addedAt"
-      //                       )
-      //                    )`,
-      //         )
-      //         .from(PlayerAnswers, "pa")
-      //         .where('pa."playerId" = p.id'),
-      //     "answers",
-      //   )
-      //   .where("p.id = :playerId", { playerId: currentPlayerId })
-      //   .getRawOne();
       const currentPlayerQuery = `
         SELECT 
             p.id,
