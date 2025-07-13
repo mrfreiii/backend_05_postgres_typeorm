@@ -1577,3 +1577,186 @@ describe("get user games statistic /my-statistic", () => {
     });
   });
 });
+
+describe("get all games statistic /top", () => {
+  connectToTestDBAndClearRepositories();
+
+  let user1: UserViewDtoPg;
+  let user2: UserViewDtoPg;
+  let user1Token: string;
+  let user2Token: string;
+
+  beforeAll(async () => {
+    const users = await createTestUsers({ count: 3 });
+    user1 = users[0];
+    user2 = users[1];
+
+    const tokens = await getUsersJwtTokens(users);
+    user1Token = tokens[0];
+    user2Token = tokens[1];
+
+    const questionsWithAnswers = await createTestPublishedQuestions(5);
+
+    await createGame_user1_wins_5_2({
+      questionsWithAnswers,
+      user1Token,
+      user2Token,
+    });
+
+    await createGame_users_with_draw_score_2({
+      questionsWithAnswers,
+      user1Token,
+      user2Token,
+    });
+
+    // connect user1 to game3
+    await req
+      .post(`${SETTINGS.PATH.GAMES}/pairs/connection`)
+      .set("Authorization", `Bearer ${user1Token}`)
+      .expect(200);
+  });
+
+  it("should return statistic without query params", async () => {
+    const res = await req.get(`${SETTINGS.PATH.GAMES}/users/top`).expect(200);
+
+    expect(res.body.pagesCount).toBe(1);
+    expect(res.body.page).toBe(1);
+    expect(res.body.pageSize).toBe(10);
+    expect(res.body.totalCount).toBe(2);
+    expect(res.body.items.length).toBe(2);
+
+    expect(res.body.items).toEqual([
+      {
+        sumScore: 7,
+        avgScores: 2.33,
+        gamesCount: 3,
+        winsCount: 1,
+        lossesCount: 0,
+        drawsCount: 1,
+        player: {
+          id: user1.id,
+          login: user1.login,
+        },
+      },
+      {
+        sumScore: 4,
+        avgScores: 2,
+        gamesCount: 2,
+        winsCount: 0,
+        lossesCount: 1,
+        drawsCount: 1,
+        player: {
+          id: user2.id,
+          login: user2.login,
+        },
+      },
+    ]);
+  });
+
+  it("should return statistic with query params: page number and page size", async () => {
+    const res = await req
+      .get(`${SETTINGS.PATH.GAMES}/users/top?pageNumber=2&pageSize=1`)
+      .expect(200);
+
+    expect(res.body.pagesCount).toBe(2);
+    expect(res.body.page).toBe(2);
+    expect(res.body.pageSize).toBe(1);
+    expect(res.body.totalCount).toBe(2);
+    expect(res.body.items.length).toBe(1);
+
+    expect(res.body.items).toEqual([
+      {
+        sumScore: 4,
+        avgScores: 2,
+        gamesCount: 2,
+        winsCount: 0,
+        lossesCount: 1,
+        drawsCount: 1,
+        player: {
+          id: user2.id,
+          login: user2.login,
+        },
+      },
+    ]);
+  });
+
+  it("should return statistic with query param: sort (one option)", async () => {
+    const res = await req
+      .get(`${SETTINGS.PATH.GAMES}/users/top?sort=avgScores asc`)
+      .expect(200);
+
+    expect(res.body.pagesCount).toBe(1);
+    expect(res.body.page).toBe(1);
+    expect(res.body.pageSize).toBe(10);
+    expect(res.body.totalCount).toBe(2);
+    expect(res.body.items.length).toBe(2);
+
+    expect(res.body.items).toEqual([
+      {
+        sumScore: 4,
+        avgScores: 2,
+        gamesCount: 2,
+        winsCount: 0,
+        lossesCount: 1,
+        drawsCount: 1,
+        player: {
+          id: user2.id,
+          login: user2.login,
+        },
+      },
+      {
+        sumScore: 7,
+        avgScores: 2.33,
+        gamesCount: 3,
+        winsCount: 1,
+        lossesCount: 0,
+        drawsCount: 1,
+        player: {
+          id: user1.id,
+          login: user1.login,
+        },
+      },
+    ]);
+  });
+
+  it("should return statistic with query param: sort (two options)", async () => {
+    const res = await req
+      .get(
+        `${SETTINGS.PATH.GAMES}/users/top?sort=drawsCount desc&sort=gamesCount desc`,
+      )
+      .expect(200);
+
+    expect(res.body.pagesCount).toBe(1);
+    expect(res.body.page).toBe(1);
+    expect(res.body.pageSize).toBe(10);
+    expect(res.body.totalCount).toBe(2);
+    expect(res.body.items.length).toBe(2);
+
+    expect(res.body.items).toEqual([
+      {
+        sumScore: 7,
+        avgScores: 2.33,
+        gamesCount: 3,
+        winsCount: 1,
+        lossesCount: 0,
+        drawsCount: 1,
+        player: {
+          id: user1.id,
+          login: user1.login,
+        },
+      },
+      {
+        sumScore: 4,
+        avgScores: 2,
+        gamesCount: 2,
+        winsCount: 0,
+        lossesCount: 1,
+        drawsCount: 1,
+        player: {
+          id: user2.id,
+          login: user2.login,
+        },
+      },
+    ]);
+  });
+});

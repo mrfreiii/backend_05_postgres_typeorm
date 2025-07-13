@@ -31,10 +31,10 @@ import { GetGamesQueryParams } from "./input-dto/get-games-query-params.input-dt
 import { PaginatedViewDto } from "../../../../core/dto/base.paginated.view-dto";
 import { GamesStatisticViewDtoTypeorm } from "./view-dto/games-statistic.view-dto.pg";
 import { PlayersQueryRepository } from "../infrastructure/query/players.query-repository";
+import { AllGamesStatisticViewDtoTypeorm } from "./view-dto/games-all-user-statistic.view-dto.pg";
+import { GetAllGamesStatisticQueryParamsInputDto } from "./input-dto/get-all-games-statistic-query-params.input-dto";
 
 @Controller(SETTINGS.PATH.GAMES)
-@UseGuards(JwtAuthGuard)
-@ApiBearerAuth()
 export class GamesController {
   constructor(
     private commandBus: CommandBus,
@@ -44,6 +44,8 @@ export class GamesController {
     private playersQueryRepository: PlayersQueryRepository,
   ) {}
 
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   @Post("pairs/connection")
   @HttpCode(HttpStatus.OK)
   async connectUserToGame(
@@ -56,6 +58,8 @@ export class GamesController {
     return this.gamesQueryRepository.getByIdOrNotFoundFail_typeorm(gameId);
   }
 
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   @Get("pairs/:id")
   async getGameById(
     @Param("id") id: string,
@@ -124,6 +128,8 @@ export class GamesController {
     return game;
   }
 
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   @Post("pairs/my-current/answers")
   @HttpCode(HttpStatus.OK)
   async addGameAnswer(
@@ -142,11 +148,21 @@ export class GamesController {
     );
   }
 
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   @Get("users/my-statistic")
   @HttpCode(HttpStatus.OK)
   async getUserGamesStatistic(
     @ExtractUserFromRequest() user: UserContextDto,
   ): Promise<GamesStatisticViewDtoTypeorm> {
     return this.playersQueryRepository.getStatistic_typeorm(user.id);
+  }
+
+  @Get("users/top")
+  @HttpCode(HttpStatus.OK)
+  async getStatisticForAllUsers(
+    @Query() query: GetAllGamesStatisticQueryParamsInputDto,
+  ): Promise<PaginatedViewDto<AllGamesStatisticViewDtoTypeorm>> {
+    return this.playersQueryRepository.getAllGamesStatistic_typeorm(query);
   }
 }
