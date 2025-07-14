@@ -14,10 +14,11 @@ import { PlayerGameResultStatusEnum } from "../enums/playerGameResultStatus.enum
 import { PlayerAnswersRepository } from "../infrastructure/playerAnswers.repository";
 
 const FINISH_GAME_IN_SECONDS: number = 8;
-let GAMES_IN_PROCESS: string[] = [];
 
 @Injectable()
 export class GameScheduleService {
+  #gamesInProcess: string[] = [];
+
   constructor(
     private gamesRepository: GamesRepository,
     @InjectRepository(PlayerAnswers)
@@ -31,14 +32,9 @@ export class GameScheduleService {
     const games =
       await this.gamesRepository.getActiveGamesWhereOnePlayerAnsweredToAllQuestions();
 
-    const gamesNotInProcess = games?.filter(
-      (g) => !GAMES_IN_PROCESS.includes(g.id),
-    );
-
-    if (gamesNotInProcess && gamesNotInProcess?.length > 0) {
-      for (let i = 0; i < gamesNotInProcess?.length; i++) {
-        const game = gamesNotInProcess[i];
-        GAMES_IN_PROCESS.push(game.id);
+    if (games && games?.length > 0) {
+      for (let i = 0; i < games?.length; i++) {
+        const game = games[i];
 
         let finishedPlayerId: string;
         let finishedPlayerLastAnswerDate: string;
@@ -75,6 +71,16 @@ export class GameScheduleService {
 
         // Passed more than 10 sec after last answer
         if (lastAnswerDatePlus10sec < new Date()) {
+          const isAlreadyInProcess = await this._checkIfGameAlreadyInProcess(
+            game.id,
+          );
+
+          if (isAlreadyInProcess) {
+            continue;
+          }
+
+          await this._addGameToProcessing(game.id);
+
           // Add incorrect answers for notFinished player for all not answered questions
           for (let j = 0; j < allQuestionIds.length; j++) {
             if (!notFinishedPlayerQuestionIds.includes(allQuestionIds[j])) {
@@ -147,10 +153,34 @@ export class GameScheduleService {
 
             await this.gamesRepository.save_game_typeorm(gameForUpdate);
           }
-        }
 
-        GAMES_IN_PROCESS = GAMES_IN_PROCESS.filter((id) => id !== game.id);
+          await this._deleteGameFromProcessing(game.id);
+        }
       }
     }
+  }
+
+  private async _checkIfGameAlreadyInProcess(gameId: string): Promise<boolean> {
+    return new Promise((resolve) => {
+      const result = this.#gamesInProcess.includes(gameId);
+
+      resolve(result);
+    });
+  }
+
+  private async _addGameToProcessing(gameId: string): Promise<void> {
+    return new Promise((resolve) => {
+      this.#gamesInProcess.push(gameId);
+
+      resolve();
+    });
+  }
+
+  private async _deleteGameFromProcessing(gameId: string): Promise<void> {
+    return new Promise((resolve) => {
+      this.#gamesInProcess = this.#gamesInProcess.filter((id) => id !== gameId);
+
+      resolve();
+    });
   }
 }

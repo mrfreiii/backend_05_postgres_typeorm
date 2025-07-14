@@ -1398,11 +1398,6 @@ describe("get all user games /my", () => {
       .set("Authorization", `Bearer ${user1Token}`)
       .expect(200);
 
-    // expect(res.body).toEqual({
-    //   field: "id",
-    //   message: "Id has incorrect format",
-    // });
-
     expect(res.body.pagesCount).toBe(1);
     expect(res.body.page).toBe(1);
     expect(res.body.pageSize).toBe(10);
@@ -1774,7 +1769,11 @@ describe("finish game in 15sec after one player answered to all questions", () =
   let user2Token: string;
 
   let game1: GameViewDtoTypeorm;
-  let correctAnswerForFirstQuestion: string | undefined;
+  let correctAnswer1: string | undefined;
+  let correctAnswer2: string | undefined;
+  let correctAnswer3: string | undefined;
+  let correctAnswer4: string | undefined;
+  let correctAnswer5: string | undefined;
 
   beforeAll(async () => {
     const users = await createTestUsers({ count: 3 });
@@ -1799,50 +1798,77 @@ describe("finish game in 15sec after one player answered to all questions", () =
 
     game1 = gameRes.body;
 
-    correctAnswerForFirstQuestion = questionsWithAnswers.find((qwa) => {
+    correctAnswer1 = questionsWithAnswers.find((qwa) => {
       return qwa.id === game1?.questions?.[0].id;
+    })?.correctAnswers[0];
+    correctAnswer2 = questionsWithAnswers.find((qwa) => {
+      return qwa.id === game1?.questions?.[1].id;
+    })?.correctAnswers[0];
+    correctAnswer3 = questionsWithAnswers.find((qwa) => {
+      return qwa.id === game1?.questions?.[2].id;
+    })?.correctAnswers[0];
+    correctAnswer4 = questionsWithAnswers.find((qwa) => {
+      return qwa.id === game1?.questions?.[3].id;
+    })?.correctAnswers[0];
+    correctAnswer5 = questionsWithAnswers.find((qwa) => {
+      return qwa.id === game1?.questions?.[4].id;
     })?.correctAnswers[0];
   });
 
-  // afterEach(() => {
-  //   global.Date = RealDate;
-  // });
+  it("should return 3 score for 2nd player and 5 score for 1st player", async () => {
+    // answer #1
+    await req
+      .post(`${SETTINGS.PATH.GAMES}/pairs/my-current/answers`)
+      .set("Authorization", `Bearer ${user2Token}`)
+      .send({ answer: correctAnswer1 })
+      .expect(200);
+    // answer #2
+    await req
+      .post(`${SETTINGS.PATH.GAMES}/pairs/my-current/answers`)
+      .set("Authorization", `Bearer ${user2Token}`)
+      .send({ answer: correctAnswer2 })
+      .expect(200);
+    // answer #3
+    await req
+      .post(`${SETTINGS.PATH.GAMES}/pairs/my-current/answers`)
+      .set("Authorization", `Bearer ${user2Token}`)
+      .send({ answer: correctAnswer3 })
+      .expect(200);
 
-  it("should return 1 score for one correct answer and other incorrect", async () => {
     // answer #1
     await req
       .post(`${SETTINGS.PATH.GAMES}/pairs/my-current/answers`)
       .set("Authorization", `Bearer ${user1Token}`)
-      .send({ answer: correctAnswerForFirstQuestion })
+      .send({ answer: correctAnswer1 })
       .expect(200);
     // answer #2
     await req
       .post(`${SETTINGS.PATH.GAMES}/pairs/my-current/answers`)
       .set("Authorization", `Bearer ${user1Token}`)
-      .send({ answer: "incorrect answer" })
+      .send({ answer: correctAnswer2 })
       .expect(200);
     // answer #3
     await req
       .post(`${SETTINGS.PATH.GAMES}/pairs/my-current/answers`)
       .set("Authorization", `Bearer ${user1Token}`)
-      .send({ answer: "incorrect answer" })
+      .send({ answer: correctAnswer3 })
       .expect(200);
     // answer #4
     await req
       .post(`${SETTINGS.PATH.GAMES}/pairs/my-current/answers`)
       .set("Authorization", `Bearer ${user1Token}`)
-      .send({ answer: "incorrect answer" })
+      .send({ answer: correctAnswer4 })
       .expect(200);
     // answer #5
     await req
       .post(`${SETTINGS.PATH.GAMES}/pairs/my-current/answers`)
       .set("Authorization", `Bearer ${user1Token}`)
-      .send({ answer: "incorrect answer" })
+      .send({ answer: correctAnswer5 })
       .expect(200);
 
     const checkRes = await req
       .get(`${SETTINGS.PATH.GAMES}/pairs/${game1.id}`)
-      .set("Authorization", `Bearer ${user1Token}`)
+      .set("Authorization", `Bearer ${user2Token}`)
       .expect(200);
 
     expect(checkRes.body).toEqual({
@@ -1856,32 +1882,48 @@ describe("finish game in 15sec after one player answered to all questions", () =
           },
           {
             questionId: game1?.questions?.[1].id,
-            answerStatus: "Incorrect",
+            answerStatus: "Correct",
             addedAt: expect.any(String),
           },
           {
             questionId: game1?.questions?.[2].id,
-            answerStatus: "Incorrect",
+            answerStatus: "Correct",
             addedAt: expect.any(String),
           },
           {
             questionId: game1?.questions?.[3].id,
-            answerStatus: "Incorrect",
+            answerStatus: "Correct",
             addedAt: expect.any(String),
           },
           {
             questionId: game1?.questions?.[4].id,
-            answerStatus: "Incorrect",
+            answerStatus: "Correct",
             addedAt: expect.any(String),
           },
         ],
         player: { id: user1.id, login: user1.login },
-        score: 1,
+        score: 5,
       },
       secondPlayerProgress: {
-        answers: [],
+        answers: [
+          {
+            questionId: game1?.questions?.[0].id,
+            answerStatus: "Correct",
+            addedAt: expect.any(String),
+          },
+          {
+            questionId: game1?.questions?.[1].id,
+            answerStatus: "Correct",
+            addedAt: expect.any(String),
+          },
+          {
+            questionId: game1?.questions?.[2].id,
+            answerStatus: "Correct",
+            addedAt: expect.any(String),
+          },
+        ],
         player: { id: user2.id, login: user2.login },
-        score: 0,
+        score: 3,
       },
       questions: game1?.questions,
       status: "Active",
@@ -1893,10 +1935,6 @@ describe("finish game in 15sec after one player answered to all questions", () =
 
   it("should finish game after 15 sec", async () => {
     await delayInSec(15);
-    // const dateInFuture = add(new Date(), {
-    //   seconds: 15,
-    // });
-    // mockDate(dateInFuture.toISOString());
 
     const checkRes = await req
       .get(`${SETTINGS.PATH.GAMES}/pairs/${game1.id}`)
@@ -1914,43 +1952,43 @@ describe("finish game in 15sec after one player answered to all questions", () =
           },
           {
             questionId: game1?.questions?.[1].id,
-            answerStatus: "Incorrect",
+            answerStatus: "Correct",
             addedAt: expect.any(String),
           },
           {
             questionId: game1?.questions?.[2].id,
-            answerStatus: "Incorrect",
+            answerStatus: "Correct",
             addedAt: expect.any(String),
           },
           {
             questionId: game1?.questions?.[3].id,
-            answerStatus: "Incorrect",
+            answerStatus: "Correct",
             addedAt: expect.any(String),
           },
           {
             questionId: game1?.questions?.[4].id,
-            answerStatus: "Incorrect",
+            answerStatus: "Correct",
             addedAt: expect.any(String),
           },
         ],
         player: { id: user1.id, login: user1.login },
-        score: 2,
+        score: 6,
       },
       secondPlayerProgress: {
         answers: [
           {
             questionId: game1?.questions?.[0].id,
-            answerStatus: "Incorrect",
+            answerStatus: "Correct",
             addedAt: expect.any(String),
           },
           {
             questionId: game1?.questions?.[1].id,
-            answerStatus: "Incorrect",
+            answerStatus: "Correct",
             addedAt: expect.any(String),
           },
           {
             questionId: game1?.questions?.[2].id,
-            answerStatus: "Incorrect",
+            answerStatus: "Correct",
             addedAt: expect.any(String),
           },
           {
@@ -1965,7 +2003,7 @@ describe("finish game in 15sec after one player answered to all questions", () =
           },
         ],
         player: { id: user2.id, login: user2.login },
-        score: 0,
+        score: 3,
       },
       questions: game1?.questions,
       status: GameStatusEnum.Finished,
