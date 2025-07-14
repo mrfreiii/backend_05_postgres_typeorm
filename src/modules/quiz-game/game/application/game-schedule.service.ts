@@ -108,7 +108,7 @@ export class GameScheduleService {
 
           // Add 1 score for finished player if he has more than 1 score
           if (finishedPlayerForUpdate!.score > 0) {
-            finishedPlayerForUpdate!.score += 1;
+            finishedPlayerForUpdate!.score += 100;
           }
 
           // Determine who is winner
