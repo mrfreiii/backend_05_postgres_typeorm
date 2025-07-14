@@ -27,6 +27,7 @@ import { AddPlayerAnswerCommandHandler } from "./game/application/usecases/add-p
 import { PlayerAnswersRepository } from "./game/infrastructure/playerAnswers.repository";
 import { PlayerAnswersQueryRepository } from "./game/infrastructure/query/playerAnswers.query-repository";
 import { PlayersQueryRepository } from "./game/infrastructure/query/players.query-repository";
+import { GameScheduleService } from "./game/application/game-schedule.service";
 
 const commandHandlers = [
   CreateQuestionCommandHandler,
@@ -39,7 +40,7 @@ const commandHandlers = [
 
 const controllers = [QuestionsAdminController, GamesController];
 
-const services = [];
+const services = [GameScheduleService];
 
 const repos = [
   QuestionsRepository,

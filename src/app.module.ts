@@ -3,6 +3,7 @@ import { configModule } from "./config-dynamic-module";
 
 import { APP_FILTER } from "@nestjs/core";
 import { TypeOrmModule } from "@nestjs/typeorm";
+import { ScheduleModule } from "@nestjs/schedule";
 import { DynamicModule, Module } from "@nestjs/common";
 
 import { CoreModule } from "./core/core.module";
@@ -40,6 +41,7 @@ import { DomainHttpExceptionsFilter } from "./core/exceptions/filters/domain-exc
       },
       inject: [CoreConfig],
     }),
+    ScheduleModule.forRoot(),
     CoreModule,
     TestingModule,
     UserAccountsModule,

@@ -11,6 +11,7 @@ import { DomainException } from "../../../../core/exceptions/domain-exceptions";
 import { getRandomNumbersFromRange } from "../helpers/getRandomNumbersFromRange";
 import { DomainExceptionCode } from "../../../../core/exceptions/domain-exception-codes";
 import { GetGameQuestionsWithAnswersByPlayerId } from "./types/GetGameQuestionsWithAnswersByPlayerId";
+import { GameToFinishQueryType } from "../application/types/gameToFinishType";
 
 @Injectable()
 export class GamesRepository {
@@ -55,6 +56,31 @@ export class GamesRepository {
         userId,
         GameStatusEnum.Finished,
       ]);
+      return res?.[0];
+    } catch (e) {
+      console.log(e);
+      throw new DomainException({
+        code: DomainExceptionCode.InternalServerError,
+        message: "Failed to get game id from db",
+        extensions: [
+          {
+            field: "",
+            message: "Failed to get game id from db",
+          },
+        ],
+      });
+    }
+  }
+
+  async getActiveGameByGameId(gameId: string): Promise<Game | null> {
+    const query = `
+        SELECT *
+        FROM game
+        WHERE id = $1
+    `;
+
+    try {
+      const res = await this.dataSource.query(query, [gameId]);
       return res?.[0];
     } catch (e) {
       console.log(e);
@@ -311,6 +337,73 @@ export class GamesRepository {
       });
     } finally {
       await queryRunner.release();
+    }
+  }
+
+  async getActiveGamesWhereOnePlayerAnsweredToAllQuestions(): Promise<
+    GameToFinishQueryType[] | null
+  > {
+    const query = `
+        SELECT *
+        FROM
+          (SELECT 
+              g.id,
+              g."firstPlayerId",
+              g."secondPlayerId",
+
+              (SELECT COUNT (*)
+               FROM player_answers
+               WHERE "playerId" = g."firstPlayerId"
+              ) as "firstPlayerAnswersCount",
+              
+              (SELECT COUNT (*)
+               FROM player_answers
+               WHERE "playerId" = g."secondPlayerId"
+              ) as "secondPlayerAnswersCount",
+              
+              (SELECT MAX("addedAt")
+               FROM player_answers
+               WHERE "playerId" = g."firstPlayerId"
+              ) as "firstPlayerLastAnswerDate",
+              
+              (SELECT MAX("addedAt")
+               FROM player_answers
+               WHERE "playerId" = g."secondPlayerId"
+              ) as "secondPlayerLastAnswerDate",
+              
+              (SELECT jsonb_agg("questionId")
+               FROM player_answers
+               WHERE "playerId" = g."firstPlayerId"
+              ) as "firstPlayerQuestionIds",
+              
+              (SELECT jsonb_agg("questionId")
+               FROM player_answers
+               WHERE "playerId" = g."secondPlayerId"
+              ) as "secondPlayerQuestionIds"
+              
+           FROM game g
+           WHERE g.status = $1
+          ) as "activeGames"
+        WHERE "firstPlayerAnswersCount" = $2 OR "secondPlayerAnswersCount" = $2
+    `;
+
+    try {
+      return this.dataSource.query(query, [
+        GameStatusEnum.Active,
+        GAME_QUESTIONS_COUNT,
+      ]);
+    } catch (e) {
+      console.log(e);
+      throw new DomainException({
+        code: DomainExceptionCode.InternalServerError,
+        message: "Failed to get games from db",
+        extensions: [
+          {
+            field: "",
+            message: "Failed to get games from db",
+          },
+        ],
+      });
     }
   }
 }
