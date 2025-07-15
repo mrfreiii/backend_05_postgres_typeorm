@@ -129,7 +129,7 @@ export class AddPlayerAnswerCommandHandler
       isAnotherPlayerAnsweredFastest &&
       anotherPlayerForUpdate!.score > 0
     ) {
-      anotherPlayerForUpdate!.score += 10;
+      anotherPlayerForUpdate!.score += 1;
     }
 
     // Finish game if both players answer to all questions

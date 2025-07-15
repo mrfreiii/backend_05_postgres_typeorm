@@ -1,6 +1,6 @@
 import { add } from "date-fns";
 import { Repository } from "typeorm";
-import { Cron } from "@nestjs/schedule";
+import { Interval } from "@nestjs/schedule";
 import { Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 
@@ -27,7 +27,8 @@ export class GameScheduleService {
     private playersRepository: PlayersRepository,
   ) {}
 
-  @Cron("* * * * * *") // every second
+  // @Cron("* * * * * *") // every second
+  @Interval(2000) // every 2 seconds
   async finishGameIn10secWhenOnePlayerAnsweredToAllQuestions() {
     const games =
       await this.gamesRepository.getActiveGamesWhereOnePlayerAnsweredToAllQuestions();
@@ -71,15 +72,13 @@ export class GameScheduleService {
 
         // Passed more than 10 sec after last answer
         if (lastAnswerDatePlus10sec < new Date()) {
-          const isAlreadyInProcess = await this._checkIfGameAlreadyInProcess(
-            game.id,
-          );
+          const isAlreadyInProcess = this._checkIfGameAlreadyInProcess(game.id);
 
           if (isAlreadyInProcess) {
             continue;
           }
 
-          await this._addGameToProcessing(game.id);
+          this._addGameToProcessing(game.id);
 
           // Add incorrect answers for notFinished player for all not answered questions
           for (let j = 0; j < allQuestionIds.length; j++) {
@@ -108,7 +107,7 @@ export class GameScheduleService {
 
           // Add 1 score for finished player if he has more than 1 score
           if (finishedPlayerForUpdate!.score > 0) {
-            finishedPlayerForUpdate!.score += 100;
+            finishedPlayerForUpdate!.score += 1;
           }
 
           // Determine who is winner
@@ -154,33 +153,21 @@ export class GameScheduleService {
             await this.gamesRepository.save_game_typeorm(gameForUpdate);
           }
 
-          await this._deleteGameFromProcessing(game.id);
+          this._deleteGameFromProcessing(game.id);
         }
       }
     }
   }
 
-  private async _checkIfGameAlreadyInProcess(gameId: string): Promise<boolean> {
-    return new Promise((resolve) => {
-      const result = this.#gamesInProcess.includes(gameId);
-
-      resolve(result);
-    });
+  private _checkIfGameAlreadyInProcess(gameId: string): boolean {
+    return this.#gamesInProcess.includes(gameId);
   }
 
-  private async _addGameToProcessing(gameId: string): Promise<void> {
-    return new Promise((resolve) => {
-      this.#gamesInProcess.push(gameId);
-
-      resolve();
-    });
+  private _addGameToProcessing(gameId: string): void {
+    this.#gamesInProcess.push(gameId);
   }
 
-  private async _deleteGameFromProcessing(gameId: string): Promise<void> {
-    return new Promise((resolve) => {
-      this.#gamesInProcess = this.#gamesInProcess.filter((id) => id !== gameId);
-
-      resolve();
-    });
+  private _deleteGameFromProcessing(gameId: string): void {
+    this.#gamesInProcess = this.#gamesInProcess.filter((id) => id !== gameId);
   }
 }
