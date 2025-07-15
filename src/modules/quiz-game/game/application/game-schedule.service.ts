@@ -28,7 +28,7 @@ export class GameScheduleService {
   ) {}
 
   // @Cron("* * * * * *") // every second
-  @Interval(2000) // every 2 seconds
+  @Interval(1000) // every second
   async finishGameIn10secWhenOnePlayerAnsweredToAllQuestions() {
     const games =
       await this.gamesRepository.getActiveGamesWhereOnePlayerAnsweredToAllQuestions();
@@ -72,76 +72,6 @@ export class GameScheduleService {
 
         // Passed more than 10 sec after last answer
         if (lastAnswerDatePlus10sec < new Date()) {
-          const isAlreadyInProcess = this._checkIfGameAlreadyInProcess(game.id);
-
-          if (isAlreadyInProcess) {
-            continue;
-          }
-
-          this._addGameToProcessing(game.id);
-
-          // Add incorrect answers for notFinished player for all not answered questions
-          for (let j = 0; j < allQuestionIds.length; j++) {
-            if (!notFinishedPlayerQuestionIds.includes(allQuestionIds[j])) {
-              const newAnswer = this.playerAnswersEntity.create({
-                playerId: notFinishedPlayerId,
-                questionId: allQuestionIds[j],
-                addedAt: new Date().toISOString(),
-                status: AnswerStatusEnum.Incorrect,
-              });
-
-              await this.playerAnswersRepository.save_player_answer_typeorm(
-                newAnswer,
-              );
-            }
-          }
-
-          const finishedPlayerForUpdate =
-            await this.playersRepository.getPlayerById_typeorm(
-              finishedPlayerId,
-            );
-          const notFinishedPlayerForUpdate =
-            await this.playersRepository.getPlayerById_typeorm(
-              notFinishedPlayerId,
-            );
-
-          // Add 1 score for finished player if he has more than 1 score
-          if (finishedPlayerForUpdate!.score > 0) {
-            finishedPlayerForUpdate!.score += 1;
-          }
-
-          // Determine who is winner
-          if (
-            finishedPlayerForUpdate!.score > notFinishedPlayerForUpdate!.score
-          ) {
-            finishedPlayerForUpdate!.status = PlayerGameResultStatusEnum.Win;
-            notFinishedPlayerForUpdate!.status =
-              PlayerGameResultStatusEnum.Lose;
-          }
-
-          if (
-            notFinishedPlayerForUpdate!.score > finishedPlayerForUpdate!.score
-          ) {
-            notFinishedPlayerForUpdate!.status = PlayerGameResultStatusEnum.Win;
-            finishedPlayerForUpdate!.status = PlayerGameResultStatusEnum.Lose;
-          }
-
-          if (
-            notFinishedPlayerForUpdate!.score === finishedPlayerForUpdate!.score
-          ) {
-            notFinishedPlayerForUpdate!.status =
-              PlayerGameResultStatusEnum.Draw;
-            finishedPlayerForUpdate!.status = PlayerGameResultStatusEnum.Draw;
-          }
-
-          // Save both players
-          await this.playersRepository.save_player_typeorm(
-            finishedPlayerForUpdate!,
-          );
-          await this.playersRepository.save_player_typeorm(
-            notFinishedPlayerForUpdate!,
-          );
-
           // Finish game
           const gameForUpdate =
             await this.gamesRepository.getActiveGameByGameId(game.id);
@@ -151,9 +81,74 @@ export class GameScheduleService {
             gameForUpdate.finishGameDate = new Date().toISOString();
 
             await this.gamesRepository.save_game_typeorm(gameForUpdate);
-          }
 
-          this._deleteGameFromProcessing(game.id);
+            // Add incorrect answers for notFinished player for all not answered questions
+            for (let j = 0; j < allQuestionIds.length; j++) {
+              if (!notFinishedPlayerQuestionIds.includes(allQuestionIds[j])) {
+                const newAnswer = this.playerAnswersEntity.create({
+                  playerId: notFinishedPlayerId,
+                  questionId: allQuestionIds[j],
+                  addedAt: new Date().toISOString(),
+                  status: AnswerStatusEnum.Incorrect,
+                });
+
+                await this.playerAnswersRepository.save_player_answer_typeorm(
+                  newAnswer,
+                );
+              }
+            }
+
+            const finishedPlayerForUpdate =
+              await this.playersRepository.getPlayerById_typeorm(
+                finishedPlayerId,
+              );
+            const notFinishedPlayerForUpdate =
+              await this.playersRepository.getPlayerById_typeorm(
+                notFinishedPlayerId,
+              );
+
+            // Add 1 score for finished player if he has more than 1 score
+            if (
+              finishedPlayerForUpdate!.score > 0 &&
+              finishedPlayerForUpdate!.status === null
+            ) {
+              finishedPlayerForUpdate!.score += 1;
+            }
+
+            // Determine who is winner
+            if (
+              finishedPlayerForUpdate!.score > notFinishedPlayerForUpdate!.score
+            ) {
+              finishedPlayerForUpdate!.status = PlayerGameResultStatusEnum.Win;
+              notFinishedPlayerForUpdate!.status =
+                PlayerGameResultStatusEnum.Lose;
+            }
+
+            if (
+              notFinishedPlayerForUpdate!.score > finishedPlayerForUpdate!.score
+            ) {
+              notFinishedPlayerForUpdate!.status =
+                PlayerGameResultStatusEnum.Win;
+              finishedPlayerForUpdate!.status = PlayerGameResultStatusEnum.Lose;
+            }
+
+            if (
+              notFinishedPlayerForUpdate!.score ===
+              finishedPlayerForUpdate!.score
+            ) {
+              notFinishedPlayerForUpdate!.status =
+                PlayerGameResultStatusEnum.Draw;
+              finishedPlayerForUpdate!.status = PlayerGameResultStatusEnum.Draw;
+            }
+
+            // Save both players
+            await this.playersRepository.save_player_typeorm(
+              finishedPlayerForUpdate!,
+            );
+            await this.playersRepository.save_player_typeorm(
+              notFinishedPlayerForUpdate!,
+            );
+          }
         }
       }
     }

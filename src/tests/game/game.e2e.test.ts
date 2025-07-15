@@ -1760,7 +1760,7 @@ describe("get all games statistic /top", () => {
   });
 });
 
-describe("finish game in 15sec after one player answered to all questions", () => {
+describe("finish game in 10sec after one player answered to all questions", () => {
   connectToTestDBAndClearRepositories();
 
   let user1: UserViewDtoPg;
@@ -1933,8 +1933,8 @@ describe("finish game in 15sec after one player answered to all questions", () =
     });
   });
 
-  it("should finish game after 15 sec", async () => {
-    await delayInSec(15);
+  it("should finish game after 10 sec", async () => {
+    await delayInSec(10);
 
     const checkRes = await req
       .get(`${SETTINGS.PATH.GAMES}/pairs/${game1.id}`)
