@@ -17,8 +17,6 @@ const FINISH_GAME_IN_SECONDS: number = 8;
 
 @Injectable()
 export class GameScheduleService {
-  #gamesInProcess: string[] = [];
-
   constructor(
     private gamesRepository: GamesRepository,
     @InjectRepository(PlayerAnswers)
@@ -152,17 +150,5 @@ export class GameScheduleService {
         }
       }
     }
-  }
-
-  private _checkIfGameAlreadyInProcess(gameId: string): boolean {
-    return this.#gamesInProcess.includes(gameId);
-  }
-
-  private _addGameToProcessing(gameId: string): void {
-    this.#gamesInProcess.push(gameId);
-  }
-
-  private _deleteGameFromProcessing(gameId: string): void {
-    this.#gamesInProcess = this.#gamesInProcess.filter((id) => id !== gameId);
   }
 }
